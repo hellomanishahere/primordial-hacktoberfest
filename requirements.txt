@@ -1,0 +1,3 @@
+# Primordial uses the Python standard library by default for maximum portability.
+# Optional dependencies for development, extended testing, or production ASGI serving:
+# pytest>=7.0.0

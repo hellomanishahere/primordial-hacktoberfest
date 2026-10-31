@@ -1,0 +1,288 @@
+{
+  "discussion_id": "gh:astral-sh/uv/issues/1042",
+  "stages": [
+    {
+      "stage_num": 1,
+      "stage_name": "Discussion Preprocessing & Summarization",
+      "model_name": "Heuristic fallback (no model inference)",
+      "execution_time_ms": 0.12,
+      "output": {
+        "title": "Decide on configuration file format: TOML vs YAML vs JSON",
+        "problem_statement": "Engineering evaluation and decision required for: Decide on configuration file format: TOML vs YAML vs JSON",
+        "context_summary": "Discussion among 1 core contributors evaluating competing technical approaches and trade-offs.",
+        "participants": [
+          "charliermarsh"
+        ],
+        "identified_topics": [
+          "Configuration Format",
+          "Developer Experience",
+          "Parser Security"
+        ],
+        "timeline_length": 0
+      },
+      "raw_response": "{\n  \"title\": \"Decide on configuration file format: TOML vs YAML vs JSON\",\n  \"problem_statement\": \"Engineering evaluation and decision required for: Decide on configuration file format: TOML vs YAML vs JSON\",\n  \"context_summary\": \"Discussion among 1 core contributors evaluating competing technical approaches and trade-offs.\",\n  \"participants\": [\n    \"charliermarsh\"\n  ],\n  \"identified_topics\": [\n    \"Configuration Format\",\n    \"Developer Experience\",\n    \"Parser Security\"\n  ],\n  \"timeline_length\": 0\n}"
+    },
+    {
+      "stage_num": 2,
+      "stage_name": "Argument Mining & Rejected Alternatives Analysis",
+      "model_name": "Heuristic fallback (no model inference)",
+      "execution_time_ms": 0.03,
+      "output": {
+        "proposals": [
+          {
+            "id": "prop-1",
+            "name": "YAML configuration format (.uv.yaml)",
+            "proposer": "dev-contributor-alex",
+            "description": "Adopt YAML for familiarity with DevOps tools, GitHub Actions, and Kubernetes.",
+            "status": "rejected"
+          },
+          {
+            "id": "prop-2",
+            "name": "JSON configuration format",
+            "proposer": "frontend-dev-sam",
+            "description": "Adopt JSON for universal language support and high-speed serde_json parsing.",
+            "status": "rejected"
+          },
+          {
+            "id": "prop-3",
+            "name": "TOML configuration format (pyproject.toml / uv.toml)",
+            "proposer": "charliermarsh",
+            "description": "Standardize on TOML aligning with PEP 518/621 with comment support and safe typing.",
+            "status": "accepted"
+          }
+        ],
+        "arguments": [
+          {
+            "id": "arg-1",
+            "proposal_id": "prop-1",
+            "author": "security-auditor-eva",
+            "stance": "con",
+            "claim": "YAML has critical security and parsing ambiguity risks",
+            "reasoning": "Arbitrary type coercion, code execution CVEs in standard parsers, and the Norway problem causing silent false positives.",
+            "quote": "YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers.",
+            "comment_id": "c-102"
+          },
+          {
+            "id": "arg-2",
+            "proposal_id": "prop-2",
+            "author": "maintainer-marcus",
+            "stance": "con",
+            "claim": "JSON lacks comment support essential for configs",
+            "reasoning": "Configuration files require explanatory comments; machine-only JSON degrades developer experience.",
+            "quote": "JSON is disqualified because configuration files need comments.",
+            "comment_id": "c-104"
+          },
+          {
+            "id": "arg-3",
+            "proposal_id": "prop-3",
+            "author": "charliermarsh",
+            "stance": "pro",
+            "claim": "TOML matches Python packaging standards with robust comments and typing",
+            "reasoning": "Aligns with PEP 518/PEP 621, unambiguous typing, and mature Rust serde integrations.",
+            "quote": "It aligns with PEP 518/PEP 621 (pyproject.toml), has unambiguous typing, first-class comment support, and serde integrations in Rust are very mature.",
+            "comment_id": "c-105"
+          }
+        ],
+        "rejected_alternatives": [
+          {
+            "name": "YAML Configuration (.uv.yaml)",
+            "proposer": "dev-contributor-alex",
+            "rejection_reasons": [
+              "Severe security risks and arbitrary code execution CVEs in standard YAML parsers",
+              "Norway problem ('NO' interpreted as boolean False) causing silent configuration errors",
+              "Complex indentation rules causing formatting bugs across environments"
+            ],
+            "key_objection_quote": "YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers.",
+            "objection_author": "security-auditor-eva",
+            "comment_id": "c-102",
+            "comment_url": "https://github.com/astral-sh/uv/issues/1042#issuecomment-102"
+          },
+          {
+            "name": "JSON Configuration",
+            "proposer": "frontend-dev-sam",
+            "rejection_reasons": [
+              "Strict lack of comments prevents documenting complex build and packaging settings",
+              "Trailing commas and strict syntax make human manual editing prone to syntax errors"
+            ],
+            "key_objection_quote": "JSON is disqualified because configuration files need comments.",
+            "objection_author": "maintainer-marcus",
+            "comment_id": "c-104",
+            "comment_url": "https://github.com/astral-sh/uv/issues/1042#issuecomment-104"
+          }
+        ]
+      },
+      "raw_response": "{\n  \"proposals\": [\n    {\n      \"id\": \"prop-1\",\n      \"name\": \"YAML configuration format (.uv.yaml)\",\n      \"proposer\": \"dev-contributor-alex\",\n      \"description\": \"Adopt YAML for familiarity with DevOps tools, GitHub Actions, and Kubernetes.\",\n      \"status\": \"rejected\"\n    },\n    {\n      \"id\": \"prop-2\",\n      \"name\": \"JSON configuration format\",\n      \"proposer\": \"frontend-dev-sam\",\n      \"description\": \"Adopt JSON for universal language support and high-speed serde_json parsing.\",\n      \"status\": \"rejected\"\n    },\n    {\n      \"id\": \"prop-3\",\n      \"name\": \"TOML configuration format (pyproject.toml / uv.toml)\",\n      \"proposer\": \"charliermarsh\",\n      \"description\": \"Standardize on TOML aligning with PEP 518/621 with comment support and safe typing.\",\n      \"status\": \"accepted\"\n    }\n  ],\n  \"arguments\": [\n    {\n      \"id\": \"arg-1\",\n      \"proposal_id\": \"prop-1\",\n      \"author\": \"security-auditor-eva\",\n      \"stance\": \"con\",\n      \"claim\": \"YAML has critical security and parsing ambiguity risks\",\n      \"reasoning\": \"Arbitrary type coercion, code execution CVEs in standard parsers, and the Norway problem causing silent false positives.\",\n      \"quote\": \"YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers.\",\n      \"comment_id\": \"c-102\"\n    },\n    {\n      \"id\": \"arg-2\",\n      \"proposal_id\": \"prop-2\",\n      \"author\": \"maintainer-marcus\",\n      \"stance\": \"con\",\n      \"claim\": \"JSON lacks comment support essential for configs\",\n      \"reasoning\": \"Configuration files require explanatory comments; machine-only JSON degrades developer experience.\",\n      \"quote\": \"JSON is disqualified because configuration files need comments.\",\n      \"comment_id\": \"c-104\"\n    },\n    {\n      \"id\": \"arg-3\",\n      \"proposal_id\": \"prop-3\",\n      \"author\": \"charliermarsh\",\n      \"stance\": \"pro\",\n      \"claim\": \"TOML matches Python packaging standards with robust comments and typing\",\n      \"reasoning\": \"Aligns with PEP 518/PEP 621, unambiguous typing, and mature Rust serde integrations.\",\n      \"quote\": \"It aligns with PEP 518/PEP 621 (pyproject.toml), has unambiguous typing, first-class comment support, and serde integrations in Rust are very mature.\",\n      \"comment_id\": \"c-105\"\n    }\n  ],\n  \"rejected_alternatives\": [\n    {\n      \"name\": \"YAML Configuration (.uv.yaml)\",\n      \"proposer\": \"dev-contributor-alex\",\n      \"rejection_reasons\": [\n        \"Severe security risks and arbitrary code execution CVEs in standard YAML parsers\",\n        \"Norway problem ('NO' interpreted as boolean False) causing silent configuration errors\",\n        \"Complex indentation rules causing formatting bugs across environments\"\n      ],\n      \"key_objection_quote\": \"YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers.\",\n      \"objection_author\": \"security-auditor-eva\",\n      \"comment_id\": \"c-102\",\n      \"comment_url\": \"https://github.com/astral-sh/uv/issues/1042#issuecomment-102\"\n    },\n    {\n      \"name\": \"JSON Configuration\",\n      \"proposer\": \"frontend-dev-sam\",\n      \"rejection_reasons\": [\n        \"Strict lack of comments prevents documenting complex build and packaging settings\",\n        \"Trailing commas and strict syntax make human manual editing prone to syntax errors\"\n      ],\n      \"key_objection_quote\": \"JSON is disqualified because configuration files need comments.\",\n      \"objection_author\": \"maintainer-marcus\",\n      \"comment_id\": \"c-104\",\n      \"comment_url\": \"https://github.com/astral-sh/uv/issues/1042#issuecomment-104\"\n    }\n  ]\n}"
+    },
+    {
+      "stage_num": 3,
+      "stage_name": "Decision Synthesis & Code Grounding",
+      "model_name": "Heuristic fallback (no model inference)",
+      "execution_time_ms": 0.03,
+      "output": {
+        "title": "ADR-1042: Standardize on TOML Configuration Format",
+        "status": "Accepted",
+        "accepted_option": "Standardize on TOML configuration format (pyproject.toml / uv.toml)",
+        "considered_options": [
+          "TOML Configuration Format",
+          "YAML Configuration Format",
+          "JSON Configuration Format"
+        ],
+        "context": "Project settings, CLI arguments, and dependency constraints require a robust, standardized configuration file format.",
+        "decision_outcome": "We commit to TOML as the single official configuration file format. Settings will be parsed from [tool.uv] in pyproject.toml with fallback to standalone uv.toml.",
+        "consequences_positive": [
+          "Strict alignment with Python packaging standards PEP 518 and PEP 621",
+          "First-class comment support allows developers to document settings directly inline",
+          "Unambiguous typing prevents type coercion security bugs common in YAML",
+          "High-performance serde deserialization in Rust via toml-rs"
+        ],
+        "consequences_negative": [
+          "DevOps engineers accustomed to YAML will need minor syntax adjustment",
+          "Multi-line strings have specific syntax compared to YAML blocks"
+        ],
+        "affected_components": [
+          "pyproject.toml",
+          "uv.toml",
+          "crates/uv-settings/*",
+          "crates/uv-configuration/*",
+          "config/loader.py",
+          "config.py",
+          "crates/uv-settings/src/lib.rs"
+        ],
+        "evidence_quotes": [
+          {
+            "id": "eq-1",
+            "quote": "YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers.",
+            "author": "security-auditor-eva",
+            "comment_id": "c-102",
+            "comment_url": "https://github.com/astral-sh/uv/issues/1042#issuecomment-102",
+            "verified": true,
+            "confidence": 1.0,
+            "context": "Security objection to YAML proposal"
+          },
+          {
+            "id": "eq-2",
+            "quote": "JSON is disqualified because configuration files need comments.",
+            "author": "maintainer-marcus",
+            "comment_id": "c-104",
+            "comment_url": "https://github.com/astral-sh/uv/issues/1042#issuecomment-104",
+            "verified": true,
+            "confidence": 1.0,
+            "context": "Maintainer rejection of JSON due to missing comment support"
+          },
+          {
+            "id": "eq-3",
+            "quote": "Consensus reached: We accept TOML as the single official configuration format. Rejected YAML due to security vulnerabilities and typing ambiguities. Rejected JSON due to absence of comment support. Implemented in PR #1045.",
+            "author": "maintainer-marcus",
+            "comment_id": "c-107",
+            "comment_url": "https://github.com/astral-sh/uv/issues/1042#issuecomment-107",
+            "verified": true,
+            "confidence": 1.0,
+            "context": "Final consensus and outcome statement"
+          }
+        ]
+      },
+      "raw_response": "{\n  \"title\": \"ADR-1042: Standardize on TOML Configuration Format\",\n  \"status\": \"Accepted\",\n  \"accepted_option\": \"Standardize on TOML configuration format (pyproject.toml / uv.toml)\",\n  \"considered_options\": [\n    \"TOML Configuration Format\",\n    \"YAML Configuration Format\",\n    \"JSON Configuration Format\"\n  ],\n  \"context\": \"Project settings, CLI arguments, and dependency constraints require a robust, standardized configuration file format.\",\n  \"decision_outcome\": \"We commit to TOML as the single official configuration file format. Settings will be parsed from [tool.uv] in pyproject.toml with fallback to standalone uv.toml.\",\n  \"consequences_positive\": [\n    \"Strict alignment with Python packaging standards PEP 518 and PEP 621\",\n    \"First-class comment support allows developers to document settings directly inline\",\n    \"Unambiguous typing prevents type coercion security bugs common in YAML\",\n    \"High-performance serde deserialization in Rust via toml-rs\"\n  ],\n  \"consequences_negative\": [\n    \"DevOps engineers accustomed to YAML will need minor syntax adjustment\",\n    \"Multi-line strings have specific syntax compared to YAML blocks\"\n  ],\n  \"affected_components\": [\n    \"pyproject.toml\",\n    \"uv.toml\",\n    \"crates/uv-settings/*\",\n    \"crates/uv-configuration/*\",\n    \"config/loader.py\",\n    \"config.py\"\n  ],\n  \"evidence_quotes\": [\n    {\n      \"id\": \"eq-1\",\n      \"quote\": \"YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers.\",\n      \"author\": \"security-auditor-eva\",\n      \"comment_id\": \"c-102\",\n      \"comment_url\": \"https://github.com/astral-sh/uv/issues/1042#issuecomment-102\",\n      \"verified\": true,\n      \"confidence\": 1.0,\n      \"context\": \"Security objection to YAML proposal\"\n    },\n    {\n      \"id\": \"eq-2\",\n      \"quote\": \"JSON is disqualified because configuration files need comments.\",\n      \"author\": \"maintainer-marcus\",\n      \"comment_id\": \"c-104\",\n      \"comment_url\": \"https://github.com/astral-sh/uv/issues/1042#issuecomment-104\",\n      \"verified\": true,\n      \"confidence\": 1.0,\n      \"context\": \"Maintainer rejection of JSON due to missing comment support\"\n    },\n    {\n      \"id\": \"eq-3\",\n      \"quote\": \"Consensus reached: We accept TOML as the single official configuration format. Rejected YAML due to security vulnerabilities and typing ambiguities. Rejected JSON due to absence of comment support. Implemented in PR #1045.\",\n      \"author\": \"maintainer-marcus\",\n      \"comment_id\": \"c-107\",\n      \"comment_url\": \"https://github.com/astral-sh/uv/issues/1042#issuecomment-107\",\n      \"verified\": true,\n      \"confidence\": 1.0,\n      \"context\": \"Final consensus and outcome statement\"\n    }\n  ]\n}"
+    }
+  ],
+  "final_decision": {
+    "id": "ADR-1042",
+    "discussion_id": "gh:astral-sh/uv/issues/1042",
+    "title": "ADR-1042: Standardize on TOML Configuration Format",
+    "status": "Accepted",
+    "date": "2024-03-15",
+    "context": "Project settings, CLI arguments, and dependency constraints require a robust, standardized configuration file format.",
+    "problem_statement": "Engineering evaluation and decision required for: Decide on configuration file format: TOML vs YAML vs JSON",
+    "decision_outcome": "We commit to TOML as the single official configuration file format. Settings will be parsed from [tool.uv] in pyproject.toml with fallback to standalone uv.toml.",
+    "accepted_option": "Standardize on TOML configuration format (pyproject.toml / uv.toml)",
+    "considered_options": [
+      "TOML Configuration Format",
+      "YAML Configuration Format",
+      "JSON Configuration Format"
+    ],
+    "rejected_alternatives": [
+      {
+        "name": "YAML Configuration (.uv.yaml)",
+        "proposer": "dev-contributor-alex",
+        "rejection_reasons": [
+          "Severe security risks and arbitrary code execution CVEs in standard YAML parsers",
+          "Norway problem ('NO' interpreted as boolean False) causing silent configuration errors",
+          "Complex indentation rules causing formatting bugs across environments"
+        ],
+        "key_objection_quote": "YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers.",
+        "objection_author": "security-auditor-eva",
+        "comment_id": "c-102",
+        "comment_url": "https://github.com/astral-sh/uv/issues/1042#issuecomment-102"
+      },
+      {
+        "name": "JSON Configuration",
+        "proposer": "frontend-dev-sam",
+        "rejection_reasons": [
+          "Strict lack of comments prevents documenting complex build and packaging settings",
+          "Trailing commas and strict syntax make human manual editing prone to syntax errors"
+        ],
+        "key_objection_quote": "JSON is disqualified because configuration files need comments.",
+        "objection_author": "maintainer-marcus",
+        "comment_id": "c-104",
+        "comment_url": "https://github.com/astral-sh/uv/issues/1042#issuecomment-104"
+      }
+    ],
+    "consequences_positive": [
+      "Strict alignment with Python packaging standards PEP 518 and PEP 621",
+      "First-class comment support allows developers to document settings directly inline",
+      "Unambiguous typing prevents type coercion security bugs common in YAML",
+      "High-performance serde deserialization in Rust via toml-rs"
+    ],
+    "consequences_negative": [
+      "DevOps engineers accustomed to YAML will need minor syntax adjustment",
+      "Multi-line strings have specific syntax compared to YAML blocks"
+    ],
+    "affected_components": [
+      "pyproject.toml",
+      "uv.toml",
+      "crates/uv-settings/*",
+      "crates/uv-configuration/*",
+      "config/loader.py",
+      "config.py",
+      "crates/uv-settings/src/lib.rs"
+    ],
+    "evidence_quotes": [
+      {
+        "id": "eq-1",
+        "quote": "YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers.",
+        "author": "security-auditor-eva",
+        "comment_id": "c-102",
+        "comment_url": "https://github.com/astral-sh/uv/issues/1042#issuecomment-102",
+        "verified": true,
+        "confidence": 1.0,
+        "context": "I strongly object to YAML. YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers. Furthermore, the Norway problem ('NO' i...",
+        "char_offset": 27
+      },
+      {
+        "id": "eq-2",
+        "quote": "JSON is disqualified because configuration files need comments.",
+        "author": "maintainer-marcus",
+        "comment_id": "c-104",
+        "comment_url": "https://github.com/astral-sh/uv/issues/1042#issuecomment-104",
+        "verified": true,
+        "confidence": 1.0,
+        "context": "JSON is disqualified because configuration files need comments. Forcing developers to maintain machine-...",
+        "char_offset": 0
+      },
+      {
+        "id": "eq-3",
+        "quote": "Consensus reached: We accept TOML as the single official configuration format. Rejected YAML due to security vulnerabilities and typing ambiguities. Rejected JSON due to absence of comment support. Implemented in PR #1045.",
+        "author": "maintainer-marcus",
+        "comment_id": "c-107",
+        "comment_url": "https://github.com/astral-sh/uv/issues/1042#issuecomment-107",
+        "verified": true,
+        "confidence": 1.0,
+        "context": "Consensus reached: We accept TOML as the single official configuration format. Rejected YAML due to security vulnerabilities and typing ambiguities. Rejected JSON due to absence of comment support. Implemented in PR #1045.",
+        "char_offset": 0
+      }
+    ],
+    "madr_content": "# ADR-1042: Standardize on TOML Configuration Format\n\n* Status: **Accepted**\n* Date: 2024-03-15\n* Deciders: @charliermarsh, @dev-contributor-alex, @frontend-dev-sam, @maintainer-marcus, @security-auditor-eva\n* Source Discussion: [Decide on configuration file format: TOML vs YAML vs JSON](https://github.com/astral-sh/uv/issues/1042)\n\n## Context and Problem Statement\n\nEngineering evaluation and decision required for: Decide on configuration file format: TOML vs YAML vs JSON\n\nProject settings, CLI arguments, and dependency constraints require a robust, standardized configuration file format.\n\n## Considered Options\n\n* TOML Configuration Format *(Chosen)*\n* YAML Configuration Format *(Rejected)*\n* JSON Configuration Format *(Rejected)*\n\n## Decision Outcome\n\nChosen option: **Standardize on TOML configuration format (pyproject.toml / uv.toml)**, because:\nWe commit to TOML as the single official configuration file format. Settings will be parsed from [tool.uv] in pyproject.toml with fallback to standalone uv.toml.\n\n### Positive Consequences\n\n* Strict alignment with Python packaging standards PEP 518 and PEP 621\n* First-class comment support allows developers to document settings directly inline\n* Unambiguous typing prevents type coercion security bugs common in YAML\n* High-performance serde deserialization in Rust via toml-rs\n\n### Negative Consequences (Trade-offs)\n\n* DevOps engineers accustomed to YAML will need minor syntax adjustment\n* Multi-line strings have specific syntax compared to YAML blocks\n\n## Pros and Cons of Rejected Options\n\n### YAML Configuration (.uv.yaml)\n* Proposed by: @dev-contributor-alex\n* Rejection reasons:\n  * ❌ Severe security risks and arbitrary code execution CVEs in standard YAML parsers\n  * ❌ Norway problem ('NO' interpreted as boolean False) causing silent configuration errors\n  * ❌ Complex indentation rules causing formatting bugs across environments\n* Key objection quote: - @security-auditor-eva ([Source](https://github.com/astral-sh/uv/issues/1042#issuecomment-102))\n  > \"YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers.\"\n\n### JSON Configuration\n* Proposed by: @frontend-dev-sam\n* Rejection reasons:\n  * ❌ Strict lack of comments prevents documenting complex build and packaging settings\n  * ❌ Trailing commas and strict syntax make human manual editing prone to syntax errors\n* Key objection quote: - @maintainer-marcus ([Source](https://github.com/astral-sh/uv/issues/1042#issuecomment-104))\n  > \"JSON is disqualified because configuration files need comments.\"\n\n## Code Grounding & Impacted Components\n\nThe following files, modules, and directories are bound to this decision:\n\n* `pyproject.toml`\n* `uv.toml`\n* `crates/uv-settings/*`\n* `crates/uv-configuration/*`\n* `config/loader.py`\n* `config.py`\n* `crates/uv-settings/src/lib.rs`\n\n## Verified Evidence Citations\n\n| ID | Quote | Author | Verified | Source |\n|---|---|---|:---:|---|\n| eq-1 | \"YAML is notoriously difficult to parse securely due to arbitrary type coercion and code execution CVEs in standard parsers.\" | @security-auditor-eva | ✅ Verified | [Comment c-102](https://github.com/astral-sh/uv/issues/1042#issuecomment-102) |\n| eq-2 | \"JSON is disqualified because configuration files need comments.\" | @maintainer-marcus | ✅ Verified | [Comment c-104](https://github.com/astral-sh/uv/issues/1042#issuecomment-104) |\n| eq-3 | \"Consensus reached: We accept TOML as the single official configuration format. Rejected YAML due to security vulnerabilities and typing ambiguities. Rejected JSON due to absence of comment support. Implemented in PR #1045.\" | @maintainer-marcus | ✅ Verified | [Comment c-107](https://github.com/astral-sh/uv/issues/1042#issuecomment-107) |\n\n---\n*Generated by PRIMORDIAL Decision Intelligence Platform — Hacktoberfest 2026*",
+    "created_at": "2026-10-31T23:29:21.294224+00:00"
+  },
+  "total_time_ms": 10.29,
+  "runtime_mode": "HeuristicFallbackAdapter (deterministic application code; no model inference)"
+}
