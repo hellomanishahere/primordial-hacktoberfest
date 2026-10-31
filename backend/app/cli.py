@@ -9,12 +9,17 @@ from typing import Optional
 
 from app.core.config import settings
 from app.core.exceptions import (
+    AIModelResponseException,
+    AIModelTimeoutException,
+    AIServiceUnavailableException,
     GitHubRateLimitExceededException,
     GitHubResourceNotFoundException,
     InvalidGitHubURLException,
     PrimordialException,
+    SchemaValidationException,
 )
 from app.core.logging import setup_logging
+from app.decision_detection.detector import detect_decisions
 from app.github.client import GitHubClient
 from app.github.normalizer import normalize_github_discussion
 from app.github.parser import parse_github_url
@@ -146,6 +151,99 @@ async def preprocess_discussion_url(
         print(transcript_text[:500] + ("..." if len(transcript_text) > 500 else ""))
 
 
+async def detect_decisions_url(
+    url: str,
+    output_path: Optional[str] = None,
+    model: Optional[str] = None,
+    max_tokens: int = 12000,
+) -> None:
+    """Fetches, preprocesses, and runs AI decision detection on a GitHub discussion."""
+    try:
+        target = parse_github_url(url)
+    except InvalidGitHubURLException as exc:
+        print(f"Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Ingesting {target.resource_type.value} from {target.repository} #{target.entity_number}...")
+
+    try:
+        async with GitHubClient() as client:
+            raw_data = await client.fetch_discussion(target)
+            canonical_thread = normalize_github_discussion(target, raw_data)
+    except GitHubRateLimitExceededException as exc:
+        reset_info = f" (Resets at timestamp: {exc.details.get('rate_limit_reset')})" if exc.details.get("rate_limit_reset") else ""
+        print(f"Rate Limit Error: {exc.message}{reset_info}", file=sys.stderr)
+        print("Tip: Provide a GITHUB_TOKEN in your environment or .env file to increase rate limits to 5,000 req/hr.", file=sys.stderr)
+        sys.exit(1)
+    except GitHubResourceNotFoundException as exc:
+        print(f"Not Found: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except PrimordialException as exc:
+        print(f"GitHub Ingestion Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected error during ingestion: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    # Preprocess discussion
+    cleaned_thread = clean_discussion_thread(canonical_thread)
+
+    active_model = model or settings.AI_MODEL_PRIMARY
+    print(f"Running decision detection with AI model '{active_model}'...")
+
+    try:
+        detection_result = await detect_decisions(
+            cleaned_thread,
+            model_name=active_model,
+            token_ceiling=max_tokens,
+        )
+    except AIServiceUnavailableException as exc:
+        print(f"AI Service Error: {exc.message}", file=sys.stderr)
+        print("Tip: Ensure the local Ollama daemon is active (`ollama serve`) and the model is downloaded (`ollama pull " + active_model + "`).", file=sys.stderr)
+        sys.exit(1)
+    except AIModelTimeoutException as exc:
+        print(f"AI Timeout Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except (AIModelResponseException, SchemaValidationException) as exc:
+        print(f"AI Detection Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except PrimordialException as exc:
+        print(f"Detection Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected detection error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    # Display detection summary
+    print("\n--- AI Decision Detection Summary ---")
+    print(f"Repository: {detection_result.repository}")
+    print(f"Discussion: #{detection_result.entity_number} ({detection_result.resource_type})")
+    print(f"Model: {detection_result.model_name}")
+    print(f"Decision Detected: {'YES' if detection_result.is_decision_detected else 'NO'}")
+    print(f"Total Candidate Decisions: {detection_result.total_decisions}")
+
+    if detection_result.decisions:
+        print("\nCandidate Decisions:")
+        for dec in detection_result.decisions:
+            print(f"\n  • [{dec.decision_id}] [{dec.status.value.upper()}] (Confidence: {dec.confidence:.2f})")
+            print(f"    Statement: {dec.decision_statement}")
+            print(f"    Supporting Comments: {', '.join(dec.supporting_comment_ids)}")
+
+    if detection_result.processing_notes:
+        print("\nProcessing & Audit Notes:")
+        for note in detection_result.processing_notes:
+            print(f"  - {note}")
+
+    if output_path:
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(detection_result.to_dict(), f, indent=2, ensure_ascii=False)
+        print(f"\nDetection results saved to: {output_path}")
+    else:
+        print("\n--- Full JSON Output ---")
+        print(json.dumps(detection_result.to_dict(), indent=2, ensure_ascii=False))
+
+
 def main() -> None:
     """CLI entrypoint."""
     setup_logging()
@@ -179,6 +277,16 @@ def main() -> None:
     preprocess_parser.add_argument("--transcript", "-t", help="Optional path to write formatted transcript text file")
     preprocess_parser.add_argument("--max-tokens", type=int, default=12000, help="Context token ceiling (default: 12000)")
 
+    # Detect command (Module 4)
+    detect_parser = subparsers.add_parser(
+        "detect",
+        help="Run AI decision detection on a GitHub discussion to identify engineering decisions",
+    )
+    detect_parser.add_argument("url", help="Public GitHub Issue or Pull Request URL")
+    detect_parser.add_argument("--output", "-o", help="Optional path to write detection JSON output file")
+    detect_parser.add_argument("--model", "-m", help=f"Ollama AI model to execute (default: {settings.AI_MODEL_PRIMARY})")
+    detect_parser.add_argument("--max-tokens", type=int, default=12000, help="Context token ceiling (default: 12000)")
+
     # Extract command (Planned for later modules)
     extract_parser = subparsers.add_parser("extract", help="Recover decisions from a GitHub discussion URL")
     extract_parser.add_argument("url", help="Public GitHub Issue or Pull Request URL")
@@ -200,6 +308,15 @@ def main() -> None:
                 args.url,
                 output_path=args.output,
                 transcript_path=args.transcript,
+                max_tokens=args.max_tokens,
+            )
+        )
+    elif args.command == "detect":
+        asyncio.run(
+            detect_decisions_url(
+                args.url,
+                output_path=args.output,
+                model=args.model,
                 max_tokens=args.max_tokens,
             )
         )

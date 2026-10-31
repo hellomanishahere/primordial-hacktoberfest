@@ -2,6 +2,8 @@
 
 from app.core.config import settings
 from app.core.exceptions import (
+    AIModelResponseException,
+    AIModelTimeoutException,
     AIServiceUnavailableException,
     EmptyDiscussionException,
     GitHubAPIException,
@@ -28,6 +30,8 @@ __all__ = [
     "GitHubAPIException",
     "EmptyDiscussionException",
     "AIServiceUnavailableException",
+    "AIModelTimeoutException",
+    "AIModelResponseException",
     "SchemaValidationException",
     "get_logger",
     "setup_logging",

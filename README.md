@@ -11,10 +11,10 @@
 Primordial is an open-source, local-first platform that extracts, verifies, and compiles historical architectural decisions from complex GitHub discussions (Issues, Pull Requests, Code Reviews) into verifiable Architectural Decision Records ([MADR 3.0.0](https://adr.github.io/madr/)).
 
 ### Implementation Roadmap
-1. **Module 1: Project Setup and Backend Foundation** *(Current)*
-2. **Module 2: GitHub Integration**
-3. **Module 3: Data Preprocessing**
-4. **Module 4: AI Decision Detection**
+1. **Module 1: Project Setup and Backend Foundation** *(Completed)*
+2. **Module 2: GitHub Integration** *(Completed)*
+3. **Module 3: Data Preprocessing** *(Completed)*
+4. **Module 4: AI Decision Detection** *(Completed)*
 5. **Module 5: Rationale and Evidence Extraction**
 6. **Module 6: ADR/MADR Generation**
 7. **Module 7: Backend API and Storage**
@@ -185,7 +185,39 @@ All errors adhere to consistent, structured JSON responses:
 | `400 Bad Request` | `INVALID_GITHUB_URL` | Malformed GitHub issue/PR URL syntax |
 | `404 Not Found` | `GITHUB_RESOURCE_NOT_FOUND` / `HTTP_404` | Nonexistent endpoint or GitHub resource |
 | `405 Method Not Allowed` | `HTTP_405` | Unsupported HTTP method |
-| `422 Unprocessable Entity` | `EMPTY_DISCUSSION` / `VALIDATION_ERROR` | Empty discussion or invalid payload |
+| `422 Unprocessable Entity` | `EMPTY_DISCUSSION` / `VALIDATION_ERROR` / `SCHEMA_VALIDATION_ERROR` | Empty discussion or invalid payload/schema |
 | `429 Too Many Requests` | `GITHUB_RATE_LIMIT_EXCEEDED` | GitHub API rate limit reached |
-| `503 Service Unavailable` | `AI_SERVICE_UNAVAILABLE` | Local Ollama daemon offline |
+| `502 Bad Gateway` | `AI_MODEL_RESPONSE_ERROR` | Ollama returned error response or malformed JSON |
+| `503 Service Unavailable` | `AI_SERVICE_UNAVAILABLE` | Local Ollama daemon offline or unreachable |
+| `504 Gateway Timeout` | `AI_MODEL_TIMEOUT` | AI model inference request timed out |
+
+---
+
+## CLI Execution
+
+Primordial includes a command-line interface for running pipeline stages directly:
+
+```bash
+# Set PYTHONPATH
+export PYTHONPATH=backend
+
+# 1. Fetch & normalize raw GitHub Issue / PR discussion (Module 2)
+python -m app.cli fetch https://github.com/nodejs/node/pull/41749
+
+# 2. Preprocess, filter noise/bots, and format context transcript (Module 3)
+python -m app.cli preprocess https://github.com/nodejs/node/pull/41749 --transcript transcript.txt
+
+# 3. Detect candidate engineering decisions using local Ollama model (Module 4)
+python -m app.cli detect https://github.com/nodejs/node/pull/41749 --model qwen2.5:7b --output decisions.json
+```
+
+### Ollama Model Setup for Decision Detection
+To run local decision detection:
+```bash
+# 1. Install & start Ollama
+ollama serve
+
+# 2. Pull the primary open-weight model
+ollama pull qwen2.5:7b
+```
 

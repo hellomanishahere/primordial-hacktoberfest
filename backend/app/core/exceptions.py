@@ -183,3 +183,36 @@ class SchemaValidationException(PrimordialException):
             error_code="SCHEMA_VALIDATION_ERROR",
             details=details,
         )
+
+
+class AIModelTimeoutException(PrimordialException):
+    """Raised when an AI model inference request times out."""
+
+    def __init__(
+        self,
+        message: str = "AI model inference request timed out",
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        super().__init__(
+            message=message,
+            status_code=504,
+            error_code="AI_MODEL_TIMEOUT",
+            details=details,
+        )
+
+
+class AIModelResponseException(PrimordialException):
+    """Raised when an AI model returns an unexpected response or invalid format."""
+
+    def __init__(
+        self,
+        message: str = "AI model returned an unexpected response",
+        status_code: int = 502,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        super().__init__(
+            message=message,
+            status_code=status_code,
+            error_code="AI_MODEL_RESPONSE_ERROR",
+            details=details,
+        )
