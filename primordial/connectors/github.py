@@ -14,6 +14,9 @@ from primordial.connectors.dataset_loader import get_sample_discussion_by_url
 from primordial.models import Comment, Discussion
 
 
+MAX_RESPONSE_BYTES = 2_000_000
+
+
 class GitHubConnector(BaseConnector):
     """Fetches discussions from GitHub issues and pull requests."""
 
@@ -53,7 +56,13 @@ class GitHubConnector(BaseConnector):
 
         req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=10) as response:
-            return json.loads(response.read().decode("utf-8"))
+            content_length = response.headers.get("Content-Length")
+            if content_length and int(content_length) > MAX_RESPONSE_BYTES:
+                raise ValueError("GitHub response exceeds the 2 MB limit")
+            body = response.read(MAX_RESPONSE_BYTES + 1)
+            if len(body) > MAX_RESPONSE_BYTES:
+                raise ValueError("GitHub response exceeds the 2 MB limit")
+            return json.loads(body.decode("utf-8"))
 
     def fetch_discussion(self, source_url: str) -> Discussion:
         # Check if local sample/fixture matches first

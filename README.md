@@ -47,6 +47,12 @@ python -m primordial.server.app
 
 Open <http://localhost:8080>. The health endpoint reports whether the server selected the Ollama or heuristic adapter: <http://localhost:8080/api/health>.
 
+## Security notes
+
+- The HTTP server is local-only. It rejects non-loopback clients and non-local browser origins, even if its bind address is changed.
+- GitHub, Discourse, and model responses are treated as untrusted input. The app bounds request, response, and model prompt sizes; validates Discourse hosts against public IP ranges; does not follow Discourse redirects; and tells the models to ignore instructions embedded in source content.
+- The SQLite database is stored unencrypted on the local machine. Do not import sensitive discussion data unless the machine and its files are appropriately protected.
+
 ## Examples
 
 [`examples/`](examples/) contains a representative curated discussion input and an actual pipeline output produced by the deterministic heuristic fallback. The output is labeled with its runtime mode so it is not mistaken for a model-generated result.
