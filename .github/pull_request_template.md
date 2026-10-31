@@ -1,44 +1,21 @@
 # Pull Request
 
-## 1. Summary of Changes
+## What this PR does
 
-<!-- Describe the purpose and scope of the changes introduced in this PR. -->
+Describe the functionality, improvements, or fixes introduced by this pull request.
 
+## Models the product uses in this PR
 
+Mention the open-source or open-weight AI models used in this implementation.
 
-## 2. Product Models Used
+Example: gemma4:e4b via Ollama or none.
 
-<!-- List AI/ML models used by the product in these changes. If none were used, state "None". -->
+## AI coding assistants that helped write it
 
-| Model | Purpose |
-|---|---|
-| | |
+Mention the AI coding assistants used during development.
 
-## 3. AI Coding Assistants Used
+Example: GitHub Copilot, Cursor, Claude Code, or none.
 
-<!-- List AI coding assistants that contributed to this PR. If none were used, state "None". -->
+## How we tested it
 
-| Assistant | Contribution |
-|---|---|
-| | |
-
-## 4. Testing and Validation
-
-<!-- Describe the tests performed and their results. -->
-
-- **Tests performed:**
-- **Validation results:**
-- **Known limitations:**
-
-### Verification Checklist
-
-- [ ] Changes tested locally.
-- [ ] Relevant automated tests pass.
-- [ ] CI checks pass.
-- [ ] No API keys, credentials, or sensitive information committed.
-- [ ] Documentation updated where necessary.
-- [ ] Changes comply with project requirements.
-
-## Additional Notes
-
-<!-- Include relevant implementation details, screenshots, or references, if applicable. -->
+Describe the tests performed and the expected results.
