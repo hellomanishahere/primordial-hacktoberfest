@@ -1,15 +1,8 @@
 # Hacktoberfest 2026 – Project Submission
 
-**Event:** Hacktoberfest 2026 | Hack Day Sonipat  
-**Date:** 31 October 2026  
-**Venue:** Newton School of Technology, Rishihood University, Sonipat  
-
----
-
 ## 1. Team Information
 
 - **Team Name:** Primordial
-- **Repository Name:** primordial-hacktoberfest
 - **Team Members:**
   1. **Shaurya Negi**
   2. **Prince Chhikara**
@@ -21,7 +14,6 @@
 
 ### **Problem 06: Open Source Decision Intelligence and Knowledge Recovery**
 - **Category:** Knowledge Management | Developer Intelligence | Information Retrieval
-- **Track:** Hacktoberfest 2026 Official Engineering Challenge
 
 ### Problem Context & Objectives
 Open-source software (OSS) repositories represent some of the most dynamic engineering ecosystems in the world. However, vital architectural and technical decisions—the *why* behind design trade-offs, rejected approaches, performance compromises, and structural pivots—frequently remain buried under hundreds of issue comments, fragmented pull request reviews, and disparate technical threads. When new contributors join or existing maintainers review new pull requests touching legacy subsystems, they often lack contextual visibility into historical debates, risking inadvertent regressions, re-proposing previously rejected designs, or repeating past architectural mistakes.
@@ -89,7 +81,7 @@ To adhere strictly to Hacktoberfest requirements, our architecture avoids all pa
 | **2** | **Phi-3.5-mini-instruct** | Argumentation Mining & Rejection Rationale Analysis | Exceptionally strong in formal logic, step-by-step reasoning, and argument extraction relative to its compact 3.8B size. Excels at identifying conflicting viewpoints, separating the *accepted* consensus from *rejected* alternatives, and cataloging the explicit technical reasons for discarding ideas. |
 | **3** | **Qwen 2.5-Coder-7B-Instruct** | Deliberation Synthesis, Code-to-Decision Grounding & Structured JSON | Pre-trained extensively on source code, commit diffs, and structured syntax. Excels at producing deterministic, validated JSON and MADR formats without hallucinating code symbols. Maps abstract decisions directly to concrete file paths and syntactic definitions. |
 
-### Inference Strategy & Model Portability
-- **Zero Closed-Source APIs:** 100% compliant with the hackathon rule prohibiting paid commercial APIs.
+
+---
 - **Pluggable Execution Engine:** Designed with an extensible backend adapter supporting local open weights execution (vLLM / Ollama / GGUF llama.cpp / Hugging Face Transformers) alongside a verified offline deterministic engine for headless CI environments.
 - **Honest Verification & Transparency:** All model interfaces report their exact inference runtime, execution latency, and deterministic verification badges. No simulated functionality is claimed without actual backing implementation.
