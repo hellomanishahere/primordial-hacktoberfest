@@ -320,6 +320,18 @@ class GitHubClient:
         endpoint = f"/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
         return await self._paginate(endpoint, max_items=max_items, per_page=per_page)
 
+    async def fetch_pull_request_files(
+        self,
+        owner: str,
+        repo: str,
+        pull_number: int,
+        per_page: int = 100,
+        max_items: int = 100,
+    ) -> List[Dict[str, Any]]:
+        """Fetches modified files list and diff patches for a pull request."""
+        endpoint = f"/repos/{owner}/{repo}/pulls/{pull_number}/files"
+        return await self._paginate(endpoint, max_items=max_items, per_page=per_page)
+
     async def fetch_discussion(
         self,
         target: GitHubTarget,

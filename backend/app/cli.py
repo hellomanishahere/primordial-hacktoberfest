@@ -34,6 +34,9 @@ from app.storage.repository import StorageRepository
 from app.storage.database import init_db
 from app.search.schemas import SearchFilters
 from app.search.service import SearchService
+from app.pr_radar.analyzer import PullRequestAnalyzer
+from app.pr_radar.matcher import HistoricalDecisionMatcher
+from app.pr_radar.reporter import generate_radar_report
 
 
 async def fetch_and_normalize_url(url: str, output_path: Optional[str] = None):
@@ -734,6 +737,70 @@ def show_decision_cli(decision_id: str) -> None:
         print(f"\nAssociated ADR: {adr['adr_id']} ({adr['file_slug']})")
 
 
+async def radar_pr_url(
+    url: str,
+    output_path: Optional[str] = None,
+    threshold: float = 0.5,
+    model: Optional[str] = None,
+    max_tokens: int = 12000,
+) -> None:
+    """Analyzes a PR and detects potential conflicts or related historical decisions."""
+    init_db()
+    analyzer = PullRequestAnalyzer()
+    print(f"Ingesting Pull Request from {url}...")
+    try:
+        pr_info = await analyzer.analyze_url(url)
+    except InvalidGitHubURLException as exc:
+        print(f"Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except PrimordialException as exc:
+        print(f"GitHub Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Analyzing {len(pr_info.changed_files)} changed file(s) across historical knowledge base...")
+    matcher = HistoricalDecisionMatcher()
+    matches = matcher.match(pr_info, threshold=threshold)
+    report = generate_radar_report(pr_info, matches)
+
+    print("\n=======================================================")
+    print("           HISTORICAL PR RADAR REPORT")
+    print("=======================================================")
+    print(f"Target PR:     #{report.pr_info.pr_number} - {report.pr_info.title}")
+    print(f"Repository:    {report.pr_info.repository}")
+    print(f"Author:        @{report.pr_info.author}")
+    print(f"Changed Files: {len(report.pr_info.changed_files)}")
+    print(f"Matches:       {len(report.historical_matches)} historical decision(s)")
+    print(f"Conflicts:     {report.potential_conflicts_count}")
+    print(f"Rejections:    {report.previously_rejected_count}")
+    print("-------------------------------------------------------")
+
+    if report.historical_matches:
+        print("\nHistorical Context & Matches:")
+        for m in report.historical_matches:
+            adr_tag = f" [ADR: {m.adr_id}]" if m.adr_id else ""
+            print(f"\n  • [{m.category.value.upper()}] (Confidence: {m.confidence:.2f})")
+            print(f"    Decision:    {m.decision_id}{adr_tag} - {m.decision_summary}")
+            print(f"    Explanation: {m.relevance_explanation}")
+            print(f"    Source URL:  {m.discussion_url}")
+            if m.related_changed_files:
+                print(f"    Touchpoints: {', '.join(m.related_changed_files)}")
+    else:
+        print("\nNo historical engineering decisions matched this PR.")
+
+    print("\nRecommendations:")
+    for rec in report.recommendations:
+        print(f"  {rec}")
+
+    if output_path:
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(report.to_dict(), f, indent=2, ensure_ascii=False)
+        print(f"\nRadar report saved to: {output_path}")
+
+
 def main() -> None:
     """CLI entrypoint."""
     setup_logging()
@@ -834,6 +901,17 @@ def main() -> None:
     )
     show_dec_parser.add_argument("decision_id", help="Decision ID (e.g. dec-123-1)")
 
+    # Radar command (Module 10)
+    radar_parser = subparsers.add_parser(
+        "radar",
+        help="Analyze a GitHub Pull Request against historical decisions to identify conflicts and rejections",
+    )
+    radar_parser.add_argument("url", help="Public GitHub Pull Request URL")
+    radar_parser.add_argument("--output", "-o", help="Optional path to write radar report JSON")
+    radar_parser.add_argument("--threshold", type=float, default=0.5, help="Relevance threshold (0.0 - 1.0, default: 0.5)")
+    radar_parser.add_argument("--model", "-m", help=f"Ollama AI model to execute (default: {settings.AI_MODEL_PRIMARY})")
+    radar_parser.add_argument("--max-tokens", type=int, default=12000, help="Context token ceiling (default: 12000)")
+
     # Extract command (Planned for later modules)
     extract_parser = subparsers.add_parser("extract", help="Recover decisions from a GitHub discussion URL")
     extract_parser.add_argument("url", help="Public GitHub Issue or Pull Request URL")
@@ -910,6 +988,16 @@ def main() -> None:
         )
     elif args.command == "show-decision":
         show_decision_cli(args.decision_id)
+    elif args.command == "radar":
+        asyncio.run(
+            radar_pr_url(
+                args.url,
+                output_path=args.output,
+                threshold=args.threshold,
+                model=args.model,
+                max_tokens=args.max_tokens,
+            )
+        )
     elif args.command == "extract":
         print(f"Primordial extraction requested for: {args.url}")
         print("Note: Core pipeline AI decision extraction will be implemented in subsequent modules.")

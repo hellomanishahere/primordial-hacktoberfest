@@ -103,6 +103,8 @@ def create_application() -> FastAPI:
 
     # Mount API routers
     app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+    from app.api.endpoints import radar
+    app.include_router(radar.router, prefix="/api/radar", tags=["PR Radar"])
 
     # Root informational endpoint
     @app.get(

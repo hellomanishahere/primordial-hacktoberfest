@@ -230,6 +230,17 @@ python -m app.cli list-decisions --repo nodejs/node
 
 # 9. Inspect specific decision details with full claim evidence (Module 9)
 python -m app.cli show-decision dec-41749-1
+
+# 10. Run Historical PR Radar against a Pull Request (Module 10)
+python -m app.cli radar https://github.com/nodejs/node/pull/50001 --threshold 0.5
+```
+
+### Historical PR Radar API
+Analyze incoming Pull Requests programmatically via FastAPI:
+```bash
+curl -X POST http://localhost:8000/api/radar/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://github.com/nodejs/node/pull/50001", "threshold": 0.5}'
 ```
 
 The `extract-rationale` command runs the full pipeline (fetch → preprocess → detect → extract) and outputs a JSON document with the following top-level structure:
