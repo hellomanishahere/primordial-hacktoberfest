@@ -263,3 +263,4 @@ async def test_cli_verify_evidence_invalid_url_exits(capsys):
     assert exc_info.value.code == 1
     captured = capsys.readouterr()
     assert "Error:" in captured.err
+

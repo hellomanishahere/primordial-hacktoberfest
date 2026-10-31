@@ -288,3 +288,4 @@ async def test_cli_generate_adr_json_output(
     data = json.loads(out_file.read_text(encoding="utf-8"))
     assert data["total_adrs"] == 1
     assert data["adrs"][0]["adr_id"] == "ADR-100-01"
+

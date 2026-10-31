@@ -82,3 +82,4 @@ def test_cli_show_decision_not_found(capsys, seeded_db):
     assert exc_info.value.code == 1
     captured = capsys.readouterr()
     assert "Error: Decision 'non-existent-id' not found in database." in captured.err
+

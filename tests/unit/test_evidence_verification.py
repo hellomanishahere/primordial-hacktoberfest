@@ -364,3 +364,4 @@ async def test_11_functional_entrypoint():
     res = await verify_evidence(thread=thread, rationale_result=rationale_res)
     assert res.is_verification_completed is True
     assert res.decisions_evaluated == 1
+

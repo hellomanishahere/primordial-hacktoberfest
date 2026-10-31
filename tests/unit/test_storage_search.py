@@ -360,3 +360,4 @@ def test_10_persistence_survives_reconnect(temp_db_path):
     dec = repo2.get_decision("dec-41749-1")
     assert dec is not None
     assert dec["decision_summary"] == "Adopt Undici for native Fetch implementation in core"
+

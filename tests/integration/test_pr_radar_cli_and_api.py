@@ -134,3 +134,4 @@ async def test_api_radar_invalid_url_error():
             json={"url": "https://notgithub.com/bad/url"},
         )
     assert resp.status_code in (400, 422)
+

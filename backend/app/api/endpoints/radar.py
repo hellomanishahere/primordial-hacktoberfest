@@ -45,3 +45,4 @@ async def analyze_pull_request(payload: RadarAnalyzeRequest) -> RadarReport:
     matches = matcher.match(pr_info, threshold=payload.threshold)
     report = generate_radar_report(pr_info, matches)
     return report
+

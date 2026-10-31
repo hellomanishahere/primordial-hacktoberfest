@@ -15,11 +15,13 @@ Primordial is an open-source, local-first platform that extracts, verifies, and 
 2. **Module 2: GitHub Integration** *(Completed)*
 3. **Module 3: Data Preprocessing** *(Completed)*
 4. **Module 4: AI Decision Detection** *(Completed)*
-5. **Module 5: Rationale and Evidence Extraction**
-6. **Module 6: ADR/MADR Generation**
-7. **Module 7: Backend API and Storage**
-8. **Module 8: Frontend Development**
-9. **Module 9: Integration and Testing**
+5. **Module 5: Rationale and Evidence Extraction** *(Completed)*
+6. **Module 6: Evidence Verification** *(Completed)*
+7. **Module 7: ADR/MADR Generation** *(Completed)*
+8. **Module 8: Storage and Search** *(Completed)*
+9. **Module 9: Historical PR Radar** *(Completed)*
+10. **Module 10: Frontend Development** *(Completed)*
+11. **Module 11: Integration and Testing**
 
 ---
 
@@ -286,4 +288,46 @@ ollama serve
 # 2. Pull the primary open-weight model
 ollama pull qwen2.5:7b
 ```
+
+---
+
+## Frontend Development Dashboard
+
+Primordial includes a React + Vite + Tailwind CSS developer dashboard with dark charcoal theme.
+
+### Frontend Setup
+```bash
+cd frontend
+npm install
+```
+
+### Running the Frontend Dev Server
+```bash
+# Start the backend first (from repo root):
+cd backend && uvicorn app.main:app --reload --port 8000
+
+# Then start the frontend (from frontend/):
+cd frontend && npm run dev
+```
+
+The frontend dev server runs on **http://localhost:5173** and proxies `/api` requests to the backend on port 8000.
+
+### Frontend Pages
+| Page | Route | Description |
+|---|---|---|
+| Dashboard | `/` | Overview with stats cards and recent activity |
+| Analyze | `/analyze` | Run full pipeline on a GitHub URL |
+| Decisions | `/decisions` | Browse and filter all recovered decisions |
+| Decision Detail | `/decisions/:id` | Full decision view with rationale and evidence |
+| ADR Library | `/adrs` | Browse generated ADRs |
+| Search | `/search` | Full-text search across decisions |
+| PR Radar | `/radar` | Analyze PRs against historical decisions |
+| Settings | `/settings` | Backend health and API reference |
+
+### Production Build
+```bash
+cd frontend
+npm run build    # outputs to frontend/dist/
+```
+
 

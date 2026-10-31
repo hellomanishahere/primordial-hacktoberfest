@@ -53,3 +53,4 @@ def generate_radar_report(
         recommendations=recommendations,
         has_relevant_decisions=len(matches) > 0,
     )
+

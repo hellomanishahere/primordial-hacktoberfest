@@ -94,3 +94,4 @@ class RadarReport(BaseModel):
             "recommendations": self.recommendations,
             "has_relevant_decisions": self.has_relevant_decisions,
         }
+

@@ -50,3 +50,4 @@ class SearchResult(BaseModel):
             "hits": [h.to_dict() for h in self.hits],
             "applied_filters": self.applied_filters,
         }
+

@@ -156,3 +156,4 @@ class SearchService:
             )
             for r in rows
         ]
+

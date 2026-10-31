@@ -68,3 +68,4 @@ def get_db_session(db_path: Optional[str] = None) -> Generator[sqlite3.Connectio
         raise
     finally:
         conn.close()
+

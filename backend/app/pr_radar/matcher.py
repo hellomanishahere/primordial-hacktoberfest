@@ -168,3 +168,4 @@ class HistoricalDecisionMatcher:
         # Sort matches by confidence descending
         matches.sort(key=lambda m: m.confidence, reverse=True)
         return matches
+

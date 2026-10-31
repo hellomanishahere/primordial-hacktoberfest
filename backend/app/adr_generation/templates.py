@@ -124,3 +124,4 @@ def render_madr_markdown(adr: ADRDocument) -> str:
     lines.append("")
 
     return "\n".join(lines)
+

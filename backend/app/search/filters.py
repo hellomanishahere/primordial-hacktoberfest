@@ -36,3 +36,4 @@ def build_filter_clauses(filters: SearchFilters) -> Tuple[str, List[Any]]:
 
     clause_str = " AND ".join(conditions) if conditions else "1=1"
     return clause_str, params
+

@@ -120,3 +120,4 @@ class ADRGenerationResult(BaseModel):
             "source_url": self.source_url,
             "processing_notes": self.processing_notes,
         }
+

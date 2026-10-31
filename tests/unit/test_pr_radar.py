@@ -219,3 +219,4 @@ def test_8_radar_report_recommendations():
     assert report.has_relevant_decisions is True
     assert report.previously_rejected_count == 1
     assert any("rejected alternative" in rec for rec in report.recommendations)
+

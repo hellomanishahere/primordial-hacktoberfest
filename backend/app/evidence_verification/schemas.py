@@ -155,3 +155,4 @@ class EvidenceVerificationResult(BaseModel):
             "total_claims_unsupported": self.total_claims_unsupported,
             "processing_notes": self.processing_notes,
         }
+

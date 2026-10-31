@@ -146,3 +146,4 @@ def apply_migrations(conn: sqlite3.Connection) -> None:
         logger.debug("SQLite FTS5 virtual table verified.")
     except sqlite3.OperationalError as exc:
         logger.warning("FTS5 table setup warning (fallback will be used): %s", exc)
+

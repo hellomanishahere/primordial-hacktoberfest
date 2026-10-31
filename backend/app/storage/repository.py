@@ -371,3 +371,4 @@ class StorageRepository:
             cur = conn.execute("SELECT * FROM adrs WHERE adr_id = ?", (adr_id,))
             row = cur.fetchone()
             return dict(row) if row else None
+

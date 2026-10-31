@@ -398,3 +398,4 @@ def test_10_status_mapping():
         v_res = make_verification_result(status=cand_status)
         doc = ADRGenerator().generate(thread, v_res).adrs[0]
         assert doc.status == expected_adr_status
+

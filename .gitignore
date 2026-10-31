@@ -79,6 +79,10 @@ logs/
 ehthumbs.db
 Thumbs.db
 
+# Node / Frontend
+node_modules/
+frontend/dist/
+
 # IDE and editors
 .vscode/
 .idea/

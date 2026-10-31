@@ -108,3 +108,4 @@ class ADRRecord(BaseModel):
     markdown_content: str
     json_content: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
