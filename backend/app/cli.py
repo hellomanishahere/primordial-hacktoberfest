@@ -25,6 +25,7 @@ from app.github.normalizer import normalize_github_discussion
 from app.github.parser import parse_github_url
 from app.preprocessing.budgeter import format_discussion_transcript
 from app.preprocessing.cleaner import clean_discussion_thread
+from app.rationale_extraction.extractor import extract_decision_rationale
 
 
 async def fetch_and_normalize_url(url: str, output_path: Optional[str] = None):
@@ -244,6 +245,134 @@ async def detect_decisions_url(
         print(json.dumps(detection_result.to_dict(), indent=2, ensure_ascii=False))
 
 
+async def extract_rationale_url(
+    url: str,
+    output_path: Optional[str] = None,
+    model: Optional[str] = None,
+    max_tokens: int = 12000,
+) -> None:
+    """Fetches, preprocesses, detects decisions, and extracts rationale for a GitHub discussion."""
+    try:
+        target = parse_github_url(url)
+    except InvalidGitHubURLException as exc:
+        print(f"Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Ingesting {target.resource_type.value} from {target.repository} #{target.entity_number}...")
+
+    try:
+        async with GitHubClient() as client:
+            raw_data = await client.fetch_discussion(target)
+            canonical_thread = normalize_github_discussion(target, raw_data)
+    except GitHubRateLimitExceededException as exc:
+        reset_info = f" (Resets at: {exc.details.get('rate_limit_reset')})" if exc.details.get("rate_limit_reset") else ""
+        print(f"Rate Limit Error: {exc.message}{reset_info}", file=sys.stderr)
+        print("Tip: Provide a GITHUB_TOKEN in your environment to increase rate limits.", file=sys.stderr)
+        sys.exit(1)
+    except GitHubResourceNotFoundException as exc:
+        print(f"Not Found: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except PrimordialException as exc:
+        print(f"GitHub Ingestion Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected error during ingestion: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    # Preprocess discussion
+    cleaned_thread = clean_discussion_thread(canonical_thread)
+    active_model = model or settings.AI_MODEL_PRIMARY
+
+    # Run decision detection (Module 4)
+    print(f"Running decision detection with model '{active_model}'...")
+    try:
+        detection_result = await detect_decisions(cleaned_thread, model_name=active_model, token_ceiling=max_tokens)
+    except AIServiceUnavailableException as exc:
+        print(f"AI Service Error: {exc.message}", file=sys.stderr)
+        print(f"Tip: Ensure Ollama is running (`ollama serve`) and the model is available (`ollama pull {active_model}`).", file=sys.stderr)
+        sys.exit(1)
+    except AIModelTimeoutException as exc:
+        print(f"AI Timeout Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except (AIModelResponseException, SchemaValidationException) as exc:
+        print(f"AI Detection Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except PrimordialException as exc:
+        print(f"Detection Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected detection error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"  Decisions detected: {'YES' if detection_result.is_decision_detected else 'NO'} ({detection_result.total_decisions} candidate(s))")
+
+    # Run rationale extraction (Module 5)
+    print(f"Extracting rationale and arguments with model '{active_model}'...")
+    try:
+        extraction_result = await extract_decision_rationale(
+            thread=cleaned_thread,
+            detection_result=detection_result,
+            model_name=active_model,
+            token_ceiling=max_tokens,
+        )
+    except AIServiceUnavailableException as exc:
+        print(f"AI Service Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except AIModelTimeoutException as exc:
+        print(f"AI Timeout Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except (AIModelResponseException, SchemaValidationException) as exc:
+        print(f"AI Extraction Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except PrimordialException as exc:
+        print(f"Extraction Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected extraction error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    # Display summary
+    print("\n--- Rationale Extraction Summary ---")
+    print(f"Repository:          {extraction_result.repository}")
+    print(f"Discussion:          #{extraction_result.entity_number} ({extraction_result.resource_type})")
+    print(f"Model:               {extraction_result.model_name}")
+    print(f"Decisions Evaluated: {extraction_result.decisions_evaluated}")
+    print(f"Rationale Extracted: {'YES' if extraction_result.is_rationale_extracted else 'NO'}")
+    print(f"Evidence Citations:  {extraction_result.total_evidence_citations} comment(s)")
+
+    if extraction_result.rationales:
+        print("\nExtracted Rationale Records:")
+        for rat in extraction_result.rationales:
+            print(f"\n  • [{rat.decision_id}] [{rat.status.upper()}] (Confidence: {rat.confidence:.2f})")
+            print(f"    Summary:  {rat.decision_summary}")
+            print(f"    Rationale: {rat.rationale.statement}")
+            if rat.supporting_arguments:
+                print(f"    Supporting Arguments: {len(rat.supporting_arguments)}")
+            if rat.opposing_arguments:
+                print(f"    Opposing Arguments:   {len(rat.opposing_arguments)}")
+            if rat.rejected_alternatives:
+                print(f"    Rejected Alternatives: {len(rat.rejected_alternatives)}")
+            if rat.trade_offs:
+                print(f"    Trade-offs:           {len(rat.trade_offs)}")
+            if rat.consequences:
+                print(f"    Consequences:         {len(rat.consequences)}")
+            print(f"    Evidence Comment IDs: {', '.join(rat.evidence_comment_ids) or 'none'}")
+
+    if extraction_result.processing_notes:
+        print("\nProcessing & Audit Notes:")
+        for note in extraction_result.processing_notes:
+            print(f"  - {note}")
+
+    if output_path:
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(extraction_result.to_dict(), f, indent=2, ensure_ascii=False)
+        print(f"\nRationale extraction saved to: {output_path}")
+    else:
+        print("\n--- Full JSON Output ---")
+        print(json.dumps(extraction_result.to_dict(), indent=2, ensure_ascii=False))
+
+
 def main() -> None:
     """CLI entrypoint."""
     setup_logging()
@@ -287,6 +416,16 @@ def main() -> None:
     detect_parser.add_argument("--model", "-m", help=f"Ollama AI model to execute (default: {settings.AI_MODEL_PRIMARY})")
     detect_parser.add_argument("--max-tokens", type=int, default=12000, help="Context token ceiling (default: 12000)")
 
+    # Extract-rationale command (Module 5)
+    extract_rationale_parser = subparsers.add_parser(
+        "extract-rationale",
+        help="Detect engineering decisions and extract rationale, arguments, alternatives, and trade-offs",
+    )
+    extract_rationale_parser.add_argument("url", help="Public GitHub Issue or Pull Request URL")
+    extract_rationale_parser.add_argument("--output", "-o", help="Optional path to write rationale JSON output file")
+    extract_rationale_parser.add_argument("--model", "-m", help=f"Ollama AI model to execute (default: {settings.AI_MODEL_PRIMARY})")
+    extract_rationale_parser.add_argument("--max-tokens", type=int, default=12000, help="Context token ceiling (default: 12000)")
+
     # Extract command (Planned for later modules)
     extract_parser = subparsers.add_parser("extract", help="Recover decisions from a GitHub discussion URL")
     extract_parser.add_argument("url", help="Public GitHub Issue or Pull Request URL")
@@ -314,6 +453,15 @@ def main() -> None:
     elif args.command == "detect":
         asyncio.run(
             detect_decisions_url(
+                args.url,
+                output_path=args.output,
+                model=args.model,
+                max_tokens=args.max_tokens,
+            )
+        )
+    elif args.command == "extract-rationale":
+        asyncio.run(
+            extract_rationale_url(
                 args.url,
                 output_path=args.output,
                 model=args.model,

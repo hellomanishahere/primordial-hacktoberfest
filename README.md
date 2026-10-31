@@ -209,7 +209,45 @@ python -m app.cli preprocess https://github.com/nodejs/node/pull/41749 --transcr
 
 # 3. Detect candidate engineering decisions using local Ollama model (Module 4)
 python -m app.cli detect https://github.com/nodejs/node/pull/41749 --model qwen2.5:7b --output decisions.json
+
+# 4. Extract rationale, arguments, trade-offs, and alternatives (Module 5)
+python -m app.cli extract-rationale https://github.com/nodejs/node/pull/41749 \
+  --model qwen2.5:7b --output rationale.json
 ```
+
+The `extract-rationale` command runs the full pipeline (fetch → preprocess → detect → extract) and outputs a JSON document with the following top-level structure:
+
+```json
+{
+  "is_rationale_extracted": true,
+  "repository": "nodejs/node",
+  "entity_number": 41749,
+  "resource_type": "pull_request",
+  "source_url": "https://github.com/nodejs/node/pull/41749",
+  "model_name": "qwen2.5:7b",
+  "decisions_evaluated": 2,
+  "rationales": [
+    {
+      "decision_id": "dec-41749-1",
+      "decision_summary": "...",
+      "status": "accepted",
+      "rationale": { "statement": "...", "supporting_comment_ids": [...], "evidence_status": "verified", ... },
+      "supporting_arguments": [...],
+      "opposing_arguments": [...],
+      "rejected_alternatives": [...],
+      "trade_offs": [...],
+      "consequences": [...],
+      "evidence_comment_ids": ["101", "204"],
+      "confidence": 0.88,
+      "extraction_notes": [...]
+    }
+  ],
+  "total_evidence_citations": 5,
+  "processing_notes": [...]
+}
+```
+
+All extracted claims cite real comment IDs from the original discussion. Fields without grounded evidence are explicitly marked `"evidence_status": "insufficient_evidence"` rather than silently omitted or invented.
 
 ### Ollama Model Setup for Decision Detection
 To run local decision detection:
