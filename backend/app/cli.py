@@ -27,6 +27,9 @@ from app.preprocessing.budgeter import format_discussion_transcript
 from app.preprocessing.cleaner import clean_discussion_thread
 from app.rationale_extraction.extractor import extract_decision_rationale
 from app.evidence_verification.verifier import verify_evidence
+from app.adr_generation.generator import generate_adrs
+from app.adr_generation.templates import render_madr_markdown
+from app.adr_generation.exporter import export_adr_to_file, export_all_adrs
 
 
 async def fetch_and_normalize_url(url: str, output_path: Optional[str] = None):
@@ -507,6 +510,122 @@ async def verify_evidence_url(
         print(json.dumps(verification_result.to_dict(), indent=2, ensure_ascii=False))
 
 
+async def generate_adr_url(
+    url: str,
+    output_path: Optional[str] = None,
+    output_format: str = "markdown",
+    model: Optional[str] = None,
+    max_tokens: int = 12000,
+) -> None:
+    """End-to-end pipeline: Fetch -> Preprocess -> Detect -> Extract Rationale -> Verify Evidence -> Generate ADR."""
+    try:
+        target = parse_github_url(url)
+    except InvalidGitHubURLException as exc:
+        print(f"Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Ingesting {target.resource_type.value} from {target.repository} #{target.entity_number}...")
+
+    try:
+        async with GitHubClient() as client:
+            raw_data = await client.fetch_discussion(target)
+            canonical_thread = normalize_github_discussion(target, raw_data)
+    except GitHubRateLimitExceededException as exc:
+        reset_info = f" (Resets at: {exc.details.get('rate_limit_reset')})" if exc.details.get("rate_limit_reset") else ""
+        print(f"Rate Limit Error: {exc.message}{reset_info}", file=sys.stderr)
+        sys.exit(1)
+    except GitHubResourceNotFoundException as exc:
+        print(f"Not Found: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except PrimordialException as exc:
+        print(f"GitHub Ingestion Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected error during ingestion: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    cleaned_thread = clean_discussion_thread(canonical_thread)
+    active_model = model or settings.AI_MODEL_PRIMARY
+
+    # Step 1: Decision detection
+    print(f"Running decision detection with model '{active_model}'...")
+    try:
+        detection_result = await detect_decisions(cleaned_thread, model_name=active_model, token_ceiling=max_tokens)
+    except (AIServiceUnavailableException, AIModelTimeoutException, AIModelResponseException, SchemaValidationException, PrimordialException) as exc:
+        print(f"Detection Error: {exc.message if hasattr(exc, 'message') else exc}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected detection error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    # Step 2: Rationale extraction
+    print(f"Extracting rationale and arguments with model '{active_model}'...")
+    try:
+        extraction_result = await extract_decision_rationale(
+            thread=cleaned_thread,
+            detection_result=detection_result,
+            model_name=active_model,
+            token_ceiling=max_tokens,
+        )
+    except (AIServiceUnavailableException, AIModelTimeoutException, AIModelResponseException, SchemaValidationException, PrimordialException) as exc:
+        print(f"Extraction Error: {exc.message if hasattr(exc, 'message') else exc}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected extraction error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    # Step 3: Evidence verification
+    print("Verifying evidence and authentic comment provenance...")
+    verification_result = await verify_evidence(
+        thread=cleaned_thread,
+        rationale_result=extraction_result,
+        model_name=active_model,
+        token_ceiling=max_tokens,
+    )
+
+    # Step 4: ADR generation
+    print("Compiling MADR Architecture Decision Records...")
+    adr_result = generate_adrs(
+        thread=cleaned_thread,
+        verification_result=verification_result,
+        rationale_result=extraction_result,
+    )
+
+    print("\n--- ADR Generation Summary ---")
+    print(f"Repository:     {adr_result.repository}")
+    print(f"Discussion:     #{adr_result.entity_number}")
+    print(f"Total ADRs:     {adr_result.total_adrs}")
+
+    if not adr_result.adrs:
+        print("\nNo engineering decisions detected or verified to compile into ADRs.")
+        return
+
+    for adr in adr_result.adrs:
+        print(f"\n[{adr.adr_id}] {adr.title}")
+        print(f"  Status:               {adr.status.value.upper()}")
+        print(f"  Date:                 {adr.date}")
+        print(f"  Decision Outcome:     {adr.decision}")
+        print(f"  Supporting Evidence:  {len(adr.supporting_evidence)} citation(s)")
+        print(f"  Considered Options:   {len(adr.considered_alternatives)} rejected alternative(s)")
+        print(f"  Markdown File Slug:   {adr.file_slug}.md")
+
+    if output_path:
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        if output_format.lower() == "json":
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(adr_result.to_dict(), f, indent=2, ensure_ascii=False)
+        else:
+            # If multiple ADRs, write first or combined
+            combined_md = "\n\n---\n\n".join(render_madr_markdown(a) for a in adr_result.adrs)
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(combined_md)
+        print(f"\nADR document(s) saved to: {output_path}")
+    else:
+        print("\n--- MADR 3.0.0 Markdown Preview ---")
+        for adr in adr_result.adrs:
+            print("\n" + render_madr_markdown(adr))
+
+
 def main() -> None:
     """CLI entrypoint."""
     setup_logging()
@@ -570,6 +689,17 @@ def main() -> None:
     verify_evidence_parser.add_argument("--model", "-m", help=f"Ollama AI model to execute (default: {settings.AI_MODEL_PRIMARY})")
     verify_evidence_parser.add_argument("--max-tokens", type=int, default=12000, help="Context token ceiling (default: 12000)")
 
+    # Generate-adr command (Module 8)
+    generate_adr_parser = subparsers.add_parser(
+        "generate-adr",
+        help="Generate structured MADR Architecture Decision Records from verified GitHub discussions",
+    )
+    generate_adr_parser.add_argument("url", help="Public GitHub Issue or Pull Request URL")
+    generate_adr_parser.add_argument("--output", "-o", help="Optional path to write ADR output file")
+    generate_adr_parser.add_argument("--format", choices=["markdown", "json"], default="markdown", help="Output format (markdown or json, default: markdown)")
+    generate_adr_parser.add_argument("--model", "-m", help=f"Ollama AI model to execute (default: {settings.AI_MODEL_PRIMARY})")
+    generate_adr_parser.add_argument("--max-tokens", type=int, default=12000, help="Context token ceiling (default: 12000)")
+
     # Extract command (Planned for later modules)
     extract_parser = subparsers.add_parser("extract", help="Recover decisions from a GitHub discussion URL")
     extract_parser.add_argument("url", help="Public GitHub Issue or Pull Request URL")
@@ -617,6 +747,16 @@ def main() -> None:
             verify_evidence_url(
                 args.url,
                 output_path=args.output,
+                model=args.model,
+                max_tokens=args.max_tokens,
+            )
+        )
+    elif args.command == "generate-adr":
+        asyncio.run(
+            generate_adr_url(
+                args.url,
+                output_path=args.output,
+                output_format=args.format,
                 model=args.model,
                 max_tokens=args.max_tokens,
             )

@@ -217,6 +217,10 @@ python -m app.cli extract-rationale https://github.com/nodejs/node/pull/41749 \
 # 5. Verify evidence grounding and authentic comment provenance (Module 7)
 python -m app.cli verify-evidence https://github.com/nodejs/node/pull/41749 \
   --output verification.json
+
+# 6. Generate MADR 3.0.0 Architecture Decision Records (Module 8)
+python -m app.cli generate-adr https://github.com/nodejs/node/pull/41749 \
+  --output ADR-41749.md --format markdown
 ```
 
 The `extract-rationale` command runs the full pipeline (fetch → preprocess → detect → extract) and outputs a JSON document with the following top-level structure:
