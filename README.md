@@ -213,6 +213,10 @@ python -m app.cli detect https://github.com/nodejs/node/pull/41749 --model qwen2
 # 4. Extract rationale, arguments, trade-offs, and alternatives (Module 5)
 python -m app.cli extract-rationale https://github.com/nodejs/node/pull/41749 \
   --model qwen2.5:7b --output rationale.json
+
+# 5. Verify evidence grounding and authentic comment provenance (Module 7)
+python -m app.cli verify-evidence https://github.com/nodejs/node/pull/41749 \
+  --output verification.json
 ```
 
 The `extract-rationale` command runs the full pipeline (fetch → preprocess → detect → extract) and outputs a JSON document with the following top-level structure:

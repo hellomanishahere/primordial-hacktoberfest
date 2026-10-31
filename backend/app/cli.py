@@ -26,6 +26,7 @@ from app.github.parser import parse_github_url
 from app.preprocessing.budgeter import format_discussion_transcript
 from app.preprocessing.cleaner import clean_discussion_thread
 from app.rationale_extraction.extractor import extract_decision_rationale
+from app.evidence_verification.verifier import verify_evidence
 
 
 async def fetch_and_normalize_url(url: str, output_path: Optional[str] = None):
@@ -373,6 +374,139 @@ async def extract_rationale_url(
         print(json.dumps(extraction_result.to_dict(), indent=2, ensure_ascii=False))
 
 
+async def verify_evidence_url(
+    url: str,
+    output_path: Optional[str] = None,
+    model: Optional[str] = None,
+    max_tokens: int = 12000,
+) -> None:
+    """Fetches, preprocesses, detects decisions, extracts rationale, and verifies evidence for a GitHub discussion."""
+    try:
+        target = parse_github_url(url)
+    except InvalidGitHubURLException as exc:
+        print(f"Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Ingesting {target.resource_type.value} from {target.repository} #{target.entity_number}...")
+
+    try:
+        async with GitHubClient() as client:
+            raw_data = await client.fetch_discussion(target)
+            canonical_thread = normalize_github_discussion(target, raw_data)
+    except GitHubRateLimitExceededException as exc:
+        reset_info = f" (Resets at: {exc.details.get('rate_limit_reset')})" if exc.details.get("rate_limit_reset") else ""
+        print(f"Rate Limit Error: {exc.message}{reset_info}", file=sys.stderr)
+        print("Tip: Provide a GITHUB_TOKEN in your environment to increase rate limits.", file=sys.stderr)
+        sys.exit(1)
+    except GitHubResourceNotFoundException as exc:
+        print(f"Not Found: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except PrimordialException as exc:
+        print(f"GitHub Ingestion Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected error during ingestion: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    cleaned_thread = clean_discussion_thread(canonical_thread)
+    active_model = model or settings.AI_MODEL_PRIMARY
+
+    # Decision detection
+    print(f"Running decision detection with model '{active_model}'...")
+    try:
+        detection_result = await detect_decisions(cleaned_thread, model_name=active_model, token_ceiling=max_tokens)
+    except AIServiceUnavailableException as exc:
+        print(f"AI Service Error: {exc.message}", file=sys.stderr)
+        print(f"Tip: Ensure Ollama is running (`ollama serve`) and the model is available (`ollama pull {active_model}`).", file=sys.stderr)
+        sys.exit(1)
+    except AIModelTimeoutException as exc:
+        print(f"AI Timeout Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except (AIModelResponseException, SchemaValidationException) as exc:
+        print(f"AI Detection Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except PrimordialException as exc:
+        print(f"Detection Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected detection error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    # Rationale extraction
+    print(f"Extracting rationale and arguments with model '{active_model}'...")
+    try:
+        extraction_result = await extract_decision_rationale(
+            thread=cleaned_thread,
+            detection_result=detection_result,
+            model_name=active_model,
+            token_ceiling=max_tokens,
+        )
+    except AIServiceUnavailableException as exc:
+        print(f"AI Service Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except AIModelTimeoutException as exc:
+        print(f"AI Timeout Error: {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except (AIModelResponseException, SchemaValidationException) as exc:
+        print(f"AI Extraction Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except PrimordialException as exc:
+        print(f"Extraction Error: [{exc.error_code}] {exc.message}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Unexpected extraction error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    # Evidence verification (Module 7)
+    print("Verifying evidence and authentic comment provenance...")
+    verification_result = await verify_evidence(
+        thread=cleaned_thread,
+        rationale_result=extraction_result,
+        model_name=active_model,
+        token_ceiling=max_tokens,
+    )
+
+    # Display summary
+    print("\n--- Evidence Verification Summary ---")
+    print(f"Repository:               {verification_result.repository}")
+    print(f"Discussion:               #{verification_result.entity_number} ({verification_result.resource_type})")
+    print(f"Decisions Evaluated:      {verification_result.decisions_evaluated}")
+    print(f"Claims Verified:          {verification_result.total_claims_verified}")
+    print(f"Claims Contradicted:      {verification_result.total_claims_contradicted}")
+    print(f"Claims Unsupported:       {verification_result.total_claims_unsupported}")
+
+    if verification_result.verified_decisions:
+        print("\nVerified Decision Records:")
+        for vdec in verification_result.verified_decisions:
+            print(f"\n  • [{vdec.decision_id}] [{vdec.overall_verification_status.value.upper()}] (Confidence: {vdec.confidence:.2f})")
+            print(f"    Summary: {vdec.decision_summary}")
+            print(f"    Claims Evaluated: {vdec.total_claims_evaluated} (Verified: {vdec.verified_claims_count}, Partially Supported: {vdec.partially_supported_count}, Contradicted: {vdec.contradicted_count}, Unsupported: {vdec.unsupported_count})")
+            print(f"    Supporting Comments: {', '.join(vdec.all_supporting_comment_ids) or 'none'}")
+            if vdec.all_contradicting_comment_ids:
+                print(f"    Contradicting Comments: {', '.join(vdec.all_contradicting_comment_ids)}")
+
+            for claim in vdec.claim_verifications:
+                print(f"      - [{claim.status.value.upper()}] ({claim.evidence_type.value}) {claim.claim_type}: \"{claim.claim_text[:60]}...\"")
+                if claim.supporting_comment_ids:
+                    print(f"        Evidence: Comment IDs {claim.supporting_comment_ids}")
+                if claim.contradicting_comment_ids:
+                    print(f"        Contradicted By: Comment IDs {claim.contradicting_comment_ids}")
+
+    if verification_result.processing_notes:
+        print("\nProcessing & Audit Notes:")
+        for note in verification_result.processing_notes:
+            print(f"  - {note}")
+
+    if output_path:
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(verification_result.to_dict(), f, indent=2, ensure_ascii=False)
+        print(f"\nEvidence verification saved to: {output_path}")
+    else:
+        print("\n--- Full JSON Output ---")
+        print(json.dumps(verification_result.to_dict(), indent=2, ensure_ascii=False))
+
+
 def main() -> None:
     """CLI entrypoint."""
     setup_logging()
@@ -426,6 +560,16 @@ def main() -> None:
     extract_rationale_parser.add_argument("--model", "-m", help=f"Ollama AI model to execute (default: {settings.AI_MODEL_PRIMARY})")
     extract_rationale_parser.add_argument("--max-tokens", type=int, default=12000, help="Context token ceiling (default: 12000)")
 
+    # Verify-evidence command (Module 7)
+    verify_evidence_parser = subparsers.add_parser(
+        "verify-evidence",
+        help="Verify evidence grounding and authentic provenance for extracted decisions and rationales",
+    )
+    verify_evidence_parser.add_argument("url", help="Public GitHub Issue or Pull Request URL")
+    verify_evidence_parser.add_argument("--output", "-o", help="Optional path to write verification JSON output file")
+    verify_evidence_parser.add_argument("--model", "-m", help=f"Ollama AI model to execute (default: {settings.AI_MODEL_PRIMARY})")
+    verify_evidence_parser.add_argument("--max-tokens", type=int, default=12000, help="Context token ceiling (default: 12000)")
+
     # Extract command (Planned for later modules)
     extract_parser = subparsers.add_parser("extract", help="Recover decisions from a GitHub discussion URL")
     extract_parser.add_argument("url", help="Public GitHub Issue or Pull Request URL")
@@ -462,6 +606,15 @@ def main() -> None:
     elif args.command == "extract-rationale":
         asyncio.run(
             extract_rationale_url(
+                args.url,
+                output_path=args.output,
+                model=args.model,
+                max_tokens=args.max_tokens,
+            )
+        )
+    elif args.command == "verify-evidence":
+        asyncio.run(
+            verify_evidence_url(
                 args.url,
                 output_path=args.output,
                 model=args.model,
