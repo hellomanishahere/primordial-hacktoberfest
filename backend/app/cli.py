@@ -30,6 +30,10 @@ from app.evidence_verification.verifier import verify_evidence
 from app.adr_generation.generator import generate_adrs
 from app.adr_generation.templates import render_madr_markdown
 from app.adr_generation.exporter import export_adr_to_file, export_all_adrs
+from app.storage.repository import StorageRepository
+from app.storage.database import init_db
+from app.search.schemas import SearchFilters
+from app.search.service import SearchService
 
 
 async def fetch_and_normalize_url(url: str, output_path: Optional[str] = None):
@@ -591,6 +595,20 @@ async def generate_adr_url(
         rationale_result=extraction_result,
     )
 
+    # Step 5: Persist to storage (Module 9)
+    try:
+        init_db()
+        repo = StorageRepository()
+        persist_info = repo.save_pipeline_result(
+            thread=cleaned_thread,
+            verification_result=verification_result,
+            adr_result=adr_result,
+            rationale_result=extraction_result,
+        )
+        print(f"Persisted to knowledge store: {persist_info['saved_decisions_count']} decision(s) saved.")
+    except Exception as exc:
+        print(f"Warning: Storage persistence failed: {exc}", file=sys.stderr)
+
     print("\n--- ADR Generation Summary ---")
     print(f"Repository:     {adr_result.repository}")
     print(f"Discussion:     #{adr_result.entity_number}")
@@ -624,6 +642,96 @@ async def generate_adr_url(
         print("\n--- MADR 3.0.0 Markdown Preview ---")
         for adr in adr_result.adrs:
             print("\n" + render_madr_markdown(adr))
+
+
+def search_decisions_cli(
+    query: str,
+    repository: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 20,
+) -> None:
+    """Executes a search against persisted historical engineering decisions."""
+    init_db()
+    service = SearchService()
+    filters = SearchFilters(
+        repository=repository,
+        status=status,
+        limit=limit,
+    )
+    result = service.search(query=query, filters=filters)
+
+    print(f"\n--- Decision Search Results: '{query}' ---")
+    print(f"Total Matches: {result.total_hits}\n")
+
+    if not result.hits:
+        print("No historical engineering decisions matched your query.")
+        return
+
+    for hit in result.hits:
+        print(f"• [{hit.decision_id}] [{hit.status.upper()}] {hit.title}")
+        print(f"  Repository:  {hit.repository} #{hit.entity_number}")
+        print(f"  Summary:     {hit.summary}")
+        if hit.adr_id:
+            print(f"  ADR Record:  {hit.adr_id}")
+        if hit.match_snippet:
+            print(f"  Snippet:     {hit.match_snippet}")
+        print(f"  Source URL:  {hit.source_url}\n")
+
+
+def list_decisions_cli(
+    repository: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 50,
+) -> None:
+    """Lists persisted engineering decisions in the database."""
+    init_db()
+    repo = StorageRepository()
+    decisions = repo.list_decisions(repository=repository, status=status, limit=limit)
+
+    print(f"\n--- Persisted Engineering Decisions (Total: {len(decisions)}) ---")
+    if not decisions:
+        print("No decisions recorded yet. Run `primordial generate-adr <url>` to ingest discussions.")
+        return
+
+    for d in decisions:
+        adr_str = f" [ADR: {d['adr_id']}]" if d.get("adr_id") else ""
+        print(f"• [{d['decision_id']}] [{d['status'].upper()}]{adr_str} {d['decision_summary']}")
+        print(f"  Repository: {d['repository']} #{d['entity_number']} | URL: {d['html_url']}")
+
+
+def show_decision_cli(decision_id: str) -> None:
+    """Displays comprehensive details, provenance, and claims for a single decision."""
+    init_db()
+    repo = StorageRepository()
+    dec = repo.get_decision(decision_id)
+
+    if not dec:
+        print(f"Error: Decision '{decision_id}' not found in database.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"\n--- Decision Record: {dec['decision_id']} ---")
+    print(f"Summary:       {dec['decision_summary']}")
+    print(f"Status:        {dec['status'].upper()}")
+    print(f"Confidence:    {dec['confidence']}")
+    print(f"Repository:    {dec['repository']} #{dec['entity_number']}")
+    print(f"Source URL:    {dec['html_url']}")
+
+    if dec.get("claims"):
+        print("\nClaims & Arguments:")
+        for c in dec["claims"]:
+            cids = json.loads(c["supporting_comment_ids"]) if c.get("supporting_comment_ids") else []
+            print(f"  - [{c['claim_type'].upper()}] [{c['evidence_status'].upper()}] \"{c['statement']}\"")
+            if cids:
+                print(f"    Evidence Comment IDs: {', '.join(cids)}")
+
+    if dec.get("alternatives"):
+        print("\nRejected Alternatives:")
+        for alt in dec["alternatives"]:
+            print(f"  - {alt['title']}: {alt['rejection_reason']} ([{alt['verification_status'].upper()}])")
+
+    if dec.get("adr"):
+        adr = dec["adr"]
+        print(f"\nAssociated ADR: {adr['adr_id']} ({adr['file_slug']})")
 
 
 def main() -> None:
@@ -700,6 +808,32 @@ def main() -> None:
     generate_adr_parser.add_argument("--model", "-m", help=f"Ollama AI model to execute (default: {settings.AI_MODEL_PRIMARY})")
     generate_adr_parser.add_argument("--max-tokens", type=int, default=12000, help="Context token ceiling (default: 12000)")
 
+    # Search command (Module 9)
+    search_parser = subparsers.add_parser(
+        "search",
+        help="Search persisted historical engineering decisions using full-text and metadata indexing",
+    )
+    search_parser.add_argument("query", help="Search keywords, concepts, or technology terms")
+    search_parser.add_argument("--repo", help="Filter by repository (owner/repo)")
+    search_parser.add_argument("--status", help="Filter by status (accepted, proposed, rejected, deferred, unclear)")
+    search_parser.add_argument("--limit", type=int, default=20, help="Max results to return (default: 20)")
+
+    # List-decisions command (Module 9)
+    list_dec_parser = subparsers.add_parser(
+        "list-decisions",
+        help="List all persisted engineering decisions in the local knowledge base",
+    )
+    list_dec_parser.add_argument("--repo", help="Filter by repository (owner/repo)")
+    list_dec_parser.add_argument("--status", help="Filter by status (accepted, proposed, rejected, deferred, unclear)")
+    list_dec_parser.add_argument("--limit", type=int, default=50, help="Max results to return (default: 50)")
+
+    # Show-decision command (Module 9)
+    show_dec_parser = subparsers.add_parser(
+        "show-decision",
+        help="Display comprehensive details, claims, alternatives, and ADR for a single decision ID",
+    )
+    show_dec_parser.add_argument("decision_id", help="Decision ID (e.g. dec-123-1)")
+
     # Extract command (Planned for later modules)
     extract_parser = subparsers.add_parser("extract", help="Recover decisions from a GitHub discussion URL")
     extract_parser.add_argument("url", help="Public GitHub Issue or Pull Request URL")
@@ -761,6 +895,21 @@ def main() -> None:
                 max_tokens=args.max_tokens,
             )
         )
+    elif args.command == "search":
+        search_decisions_cli(
+            query=args.query,
+            repository=args.repo,
+            status=args.status,
+            limit=args.limit,
+        )
+    elif args.command == "list-decisions":
+        list_decisions_cli(
+            repository=args.repo,
+            status=args.status,
+            limit=args.limit,
+        )
+    elif args.command == "show-decision":
+        show_decision_cli(args.decision_id)
     elif args.command == "extract":
         print(f"Primordial extraction requested for: {args.url}")
         print("Note: Core pipeline AI decision extraction will be implemented in subsequent modules.")

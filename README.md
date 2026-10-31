@@ -221,6 +221,15 @@ python -m app.cli verify-evidence https://github.com/nodejs/node/pull/41749 \
 # 6. Generate MADR 3.0.0 Architecture Decision Records (Module 8)
 python -m app.cli generate-adr https://github.com/nodejs/node/pull/41749 \
   --output ADR-41749.md --format markdown
+
+# 7. Search historical engineering decisions (Module 9)
+python -m app.cli search "Undici fetch"
+
+# 8. List all recorded decisions in knowledge store (Module 9)
+python -m app.cli list-decisions --repo nodejs/node
+
+# 9. Inspect specific decision details with full claim evidence (Module 9)
+python -m app.cli show-decision dec-41749-1
 ```
 
 The `extract-rationale` command runs the full pipeline (fetch → preprocess → detect → extract) and outputs a JSON document with the following top-level structure:
