@@ -1,0 +1,33 @@
+name: Primordial CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository-validation:
+    name: Repository Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate required files
+        run: |
+          test -f README.md
+          test -f LICENSE
+          test -f HACKATHON.md
+          test -f .github/pull_request_template.md
+          test -f .github/workflows/ci.yml
+
+      - name: Validate README is not empty
+        run: test -s README.md
