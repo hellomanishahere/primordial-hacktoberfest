@@ -91,11 +91,11 @@ class RawModelDecisionDetectionResponse(BaseModel):
 
     is_decision_detected: bool = Field(
         ...,
-        description="Whether any engineering decision (accepted, rejected, proposed, deferred) was detected",
+        description="Whether any engineering decision (accepted, rejected, proposed, deferred, unclear) was detected",
     )
     decisions: List[RawModelDecision] = Field(
-        default_factory=list,
-        description="List of detected candidate decisions",
+        ...,
+        description="Strictly required list of detected candidate decisions (empty list [] if is_decision_detected is false)",
     )
     reasoning: Optional[str] = Field(
         default=None,

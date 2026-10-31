@@ -1,14 +1,16 @@
-"""Core decision detection coordinator and evidence grounding validator."""
+"""Core decision detection coordinator, schema validation, and evidence grounding validator."""
 
+import json
 from typing import List, Optional, Set
 from pydantic import ValidationError
 
 from app.core.config import settings
-from app.core.exceptions import SchemaValidationException
+from app.core.exceptions import AIModelResponseException, SchemaValidationException
 from app.core.logging import get_logger
 from app.decision_detection.model_client import OllamaModelClient
 from app.decision_detection.prompts import (
     DECISION_DETECTION_SYSTEM_PROMPT,
+    build_correction_prompt,
     build_detection_user_prompt,
 )
 from app.decision_detection.schemas import (
@@ -29,9 +31,11 @@ class DecisionDetector:
         self,
         model_client: Optional[OllamaModelClient] = None,
         default_model: Optional[str] = None,
+        max_retries: int = 1,
     ) -> None:
         self.model_client = model_client or OllamaModelClient()
         self.default_model = default_model or settings.AI_MODEL_PRIMARY
+        self.max_retries = max_retries
 
     async def detect(
         self,
@@ -44,10 +48,11 @@ class DecisionDetector:
 
         1. Handles empty threads immediately without calling the AI model.
         2. Formats and budgets the discussion transcript.
-        3. Prompts the model for structured decision extraction.
+        3. Prompts the model for structured decision extraction with schema constraint.
         4. Validates model output using Pydantic schemas.
-        5. Enforces Level 1 evidence verification by ensuring all cited comment IDs exist.
-        6. Drops unsupported or hallucinated candidates.
+        5. Performs at most one controlled retry with correction prompt if output fails schema validation.
+        6. Enforces Level 1 evidence verification by ensuring all cited comment IDs exist.
+        7. Enforces strict consistency between is_decision_detected boolean and validated decisions.
         """
         active_model = model_name or self.default_model
         notes: List[str] = []
@@ -83,7 +88,7 @@ class DecisionDetector:
         # Record available valid comment IDs for grounding verification
         valid_comment_ids: Set[str] = {c.id for c in budgeted_thread.comments}
 
-        # 3. Build prompts
+        # 3. Build prompts and schema constraint
         user_prompt = build_detection_user_prompt(
             transcript=transcript,
             repository=thread.repository,
@@ -91,30 +96,69 @@ class DecisionDetector:
             resource_type=thread.resource_type,
             title=thread.title,
         )
+        schema_constraint = RawModelDecisionDetectionResponse.model_json_schema()
 
-        # 4. Invoke Model
-        raw_json = await self.model_client.generate_chat(
-            prompt=user_prompt,
-            system_prompt=DECISION_DETECTION_SYSTEM_PROMPT,
-            model=active_model,
-        )
+        # 4. Invoke Model with controlled retry on schema validation / JSON failure
+        parsed_response: Optional[RawModelDecisionDetectionResponse] = None
+        last_error_str = ""
+        last_raw_content = ""
 
-        # 5. Validate model output with Pydantic
-        try:
-            parsed_response = RawModelDecisionDetectionResponse.model_validate(raw_json)
-        except ValidationError as exc:
-            logger.error("Raw model response failed schema validation: %s", exc)
+        for attempt in range(self.max_retries + 1):
+            is_retry = attempt > 0
+            current_prompt = (
+                build_correction_prompt(last_error_str, last_raw_content)
+                if is_retry
+                else user_prompt
+            )
+
+            try:
+                raw_json = await self.model_client.generate_chat(
+                    prompt=current_prompt,
+                    system_prompt=DECISION_DETECTION_SYSTEM_PROMPT,
+                    model=active_model,
+                    format_schema=schema_constraint,
+                )
+            except AIModelResponseException as exc:
+                last_error_str = exc.message
+                last_raw_content = str(exc.details.get("raw_content", ""))
+                notes.append(f"Model generation attempt {attempt + 1} failed: {exc.message}")
+                if attempt >= self.max_retries:
+                    notes.append("Retry exhausted: model failed to return valid JSON.")
+                    raise
+                continue
+
+            try:
+                parsed_response = RawModelDecisionDetectionResponse.model_validate(raw_json)
+                if is_retry:
+                    notes.append("Successfully recovered valid response schema after 1 correction retry.")
+                break
+            except ValidationError as exc:
+                err_details = "; ".join(f"{e['loc']}: {e['msg']}" for e in exc.errors())
+                last_error_str = err_details
+                last_raw_content = json.dumps(raw_json)
+                notes.append(
+                    f"Model response attempt {attempt + 1} failed schema validation: {err_details}"
+                )
+                if attempt >= self.max_retries:
+                    logger.error("Retry exhausted: schema validation failed again: %s", err_details)
+                    notes.append(f"Retry exhausted: schema validation failed again: {err_details}")
+                    raise SchemaValidationException(
+                        message="AI decision detection output failed schema validation",
+                        details={"errors": exc.errors(), "raw_response": raw_json, "retry_exhausted": True},
+                    ) from exc
+
+        if parsed_response is None:
             raise SchemaValidationException(
-                message="AI decision detection output failed schema validation",
-                details={"errors": exc.errors(), "raw_response": raw_json},
-            ) from exc
+                message="AI decision detection failed to obtain valid schema response",
+                details={"last_error": last_error_str},
+            )
 
         if parsed_response.reasoning:
             notes.append(f"Model Deliberation Reasoning: {parsed_response.reasoning}")
 
-        # 6. Verify evidence links and construct CandidateDecisions
+        # 5. Verify evidence links and construct CandidateDecisions
         validated_decisions: List[CandidateDecision] = []
-        for idx, raw_candidate in enumerate(parsed_response.decisions):
+        for raw_candidate in parsed_response.decisions:
             # Check comment citations
             cited_ids = raw_candidate.supporting_comment_ids
             genuine_ids = [cid for cid in cited_ids if cid in valid_comment_ids]
@@ -153,7 +197,19 @@ class DecisionDetector:
             )
             validated_decisions.append(candidate)
 
-        is_detected = parsed_response.is_decision_detected and len(validated_decisions) > 0
+        # 6. Boolean and decision-list consistency enforcement
+        if len(validated_decisions) == 0:
+            is_detected = False
+            if parsed_response.is_decision_detected:
+                notes.append(
+                    "Set is_decision_detected to False because no valid candidate decisions were found after evidence verification."
+                )
+        else:
+            is_detected = True
+            if not parsed_response.is_decision_detected:
+                notes.append(
+                    f"Set is_decision_detected to True because {len(validated_decisions)} verified candidate decision(s) were present."
+                )
 
         return DecisionDetectionResult(
             is_decision_detected=is_detected,
@@ -173,7 +229,12 @@ async def detect_decisions(
     model_name: Optional[str] = None,
     model_client: Optional[OllamaModelClient] = None,
     token_ceiling: Optional[int] = DEFAULT_TOKEN_CEILING,
+    max_retries: int = 1,
 ) -> DecisionDetectionResult:
     """Functional convenience entrypoint for decision detection."""
-    detector = DecisionDetector(model_client=model_client, default_model=model_name)
+    detector = DecisionDetector(
+        model_client=model_client,
+        default_model=model_name,
+        max_retries=max_retries,
+    )
     return await detector.detect(thread, model_name=model_name, token_ceiling=token_ceiling)

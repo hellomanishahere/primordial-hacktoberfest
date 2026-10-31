@@ -608,3 +608,246 @@ def test_status_normalization_and_confidence_clamping():
         supporting_comment_ids=["0"],
     )
     assert d3.status == CandidateDecisionStatus.DEFERRED
+
+
+# ==============================================================================
+# Bug Fix & Schema Validation Tests
+# ==============================================================================
+@pytest.mark.asyncio
+async def test_schema_valid_response_with_decisions():
+    """Verify standard valid response with decisions parses correctly without retries."""
+    mock_client = MagicMock(spec=OllamaModelClient)
+    mock_client.generate_chat = AsyncMock(
+        return_value={
+            "is_decision_detected": True,
+            "decisions": [
+                {
+                    "decision_statement": "Adopt Undici in Node.js",
+                    "status": "accepted",
+                    "confidence": 0.95,
+                    "supporting_comment_ids": ["0", "101"],
+                    "rationale_summary": "Standard compliance",
+                }
+            ],
+            "reasoning": "Consensus reached",
+        }
+    )
+    thread = make_test_thread()
+    detector = DecisionDetector(model_client=mock_client)
+    result = await detector.detect(thread)
+
+    assert result.is_decision_detected is True
+    assert result.total_decisions == 1
+    assert mock_client.generate_chat.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_schema_valid_response_with_no_decisions():
+    """Verify valid response with no decisions parses correctly without retries."""
+    mock_client = MagicMock(spec=OllamaModelClient)
+    mock_client.generate_chat = AsyncMock(
+        return_value={
+            "is_decision_detected": False,
+            "decisions": [],
+            "reasoning": "Routine bug fix only",
+        }
+    )
+    thread = make_test_thread()
+    detector = DecisionDetector(model_client=mock_client)
+    result = await detector.detect(thread)
+
+    assert result.is_decision_detected is False
+    assert result.total_decisions == 0
+    assert result.decisions == []
+    assert mock_client.generate_chat.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_schema_missing_is_decision_detected_triggers_retry_and_succeeds():
+    """Verify that omitting is_decision_detected triggers a correction retry and succeeds."""
+    mock_client = MagicMock(spec=OllamaModelClient)
+    # Attempt 1: Omits is_decision_detected
+    # Attempt 2 (Correction retry): Includes is_decision_detected
+    mock_client.generate_chat = AsyncMock(
+        side_effect=[
+            {
+                "decisions": [
+                    {
+                        "decision_statement": "Adopt connection pool",
+                        "status": "accepted",
+                        "confidence": 0.9,
+                        "supporting_comment_ids": ["101"],
+                    }
+                ],
+                "reasoning": "Missing boolean field initially",
+            },
+            {
+                "is_decision_detected": True,
+                "decisions": [
+                    {
+                        "decision_statement": "Adopt connection pool",
+                        "status": "accepted",
+                        "confidence": 0.9,
+                        "supporting_comment_ids": ["101"],
+                    }
+                ],
+                "reasoning": "Corrected schema response",
+            },
+        ]
+    )
+    thread = make_test_thread()
+    detector = DecisionDetector(model_client=mock_client, max_retries=1)
+    result = await detector.detect(thread)
+
+    assert mock_client.generate_chat.call_count == 2
+    assert result.is_decision_detected is True
+    assert result.total_decisions == 1
+    assert any("Successfully recovered valid response schema after 1 correction retry" in n for n in result.processing_notes)
+
+
+@pytest.mark.asyncio
+async def test_schema_missing_decision_list_triggers_retry_and_succeeds():
+    """Verify that omitting decisions list triggers a correction retry and succeeds."""
+    mock_client = MagicMock(spec=OllamaModelClient)
+    mock_client.generate_chat = AsyncMock(
+        side_effect=[
+            {
+                # Missing 'decisions' field
+                "is_decision_detected": False,
+                "reasoning": "Omitted decisions array",
+            },
+            {
+                # Fixed response
+                "is_decision_detected": False,
+                "decisions": [],
+                "reasoning": "Proper response with empty decisions list",
+            },
+        ]
+    )
+    thread = make_test_thread()
+    detector = DecisionDetector(model_client=mock_client, max_retries=1)
+    result = await detector.detect(thread)
+
+    assert mock_client.generate_chat.call_count == 2
+    assert result.is_decision_detected is False
+    assert result.total_decisions == 0
+
+
+@pytest.mark.asyncio
+async def test_schema_invalid_json_triggers_retry_and_succeeds():
+    """Verify that invalid JSON raises AIModelResponseException which triggers retry and succeeds."""
+    mock_client = MagicMock(spec=OllamaModelClient)
+    mock_client.generate_chat = AsyncMock(
+        side_effect=[
+            AIModelResponseException(message="Failed to parse model response as valid JSON", status_code=502),
+            {
+                "is_decision_detected": True,
+                "decisions": [
+                    {
+                        "decision_statement": "Adopt asyncpg connection pool",
+                        "status": "accepted",
+                        "confidence": 0.95,
+                        "supporting_comment_ids": ["101"],
+                    }
+                ],
+                "reasoning": "Valid JSON on retry",
+            },
+        ]
+    )
+    thread = make_test_thread()
+    detector = DecisionDetector(model_client=mock_client, max_retries=1)
+    result = await detector.detect(thread)
+
+    assert mock_client.generate_chat.call_count == 2
+    assert result.is_decision_detected is True
+    assert result.total_decisions == 1
+
+
+@pytest.mark.asyncio
+async def test_retry_exhaustion_on_persistent_missing_field():
+    """Verify that if retry fails again, SchemaValidationException is raised with retry_exhausted=True."""
+    mock_client = MagicMock(spec=OllamaModelClient)
+    # Both attempts omit is_decision_detected
+    bad_payload = {
+        "decisions": [
+            {
+                "decision_statement": "Adopt pool",
+                "status": "accepted",
+                "confidence": 0.9,
+                "supporting_comment_ids": ["101"],
+            }
+        ]
+    }
+    mock_client.generate_chat = AsyncMock(side_effect=[bad_payload, bad_payload])
+
+    thread = make_test_thread()
+    detector = DecisionDetector(model_client=mock_client, max_retries=1)
+
+    with pytest.raises(SchemaValidationException) as exc_info:
+        await detector.detect(thread)
+
+    assert mock_client.generate_chat.call_count == 2
+    assert exc_info.value.details.get("retry_exhausted") is True
+
+
+@pytest.mark.asyncio
+async def test_retry_exhaustion_on_persistent_invalid_json():
+    """Verify that if invalid JSON persists after retry, AIModelResponseException is raised."""
+    mock_client = MagicMock(spec=OllamaModelClient)
+    exc = AIModelResponseException(message="Failed to parse model response as valid JSON", status_code=502)
+    mock_client.generate_chat = AsyncMock(side_effect=[exc, exc])
+
+    thread = make_test_thread()
+    detector = DecisionDetector(model_client=mock_client, max_retries=1)
+
+    with pytest.raises(AIModelResponseException):
+        await detector.detect(thread)
+
+    assert mock_client.generate_chat.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_boolean_and_decision_list_consistency_empty_with_true():
+    """Verify that if model returns is_decision_detected=True but decisions=[], it is normalized to False."""
+    mock_client = MagicMock(spec=OllamaModelClient)
+    mock_client.generate_chat = AsyncMock(
+        return_value={
+            "is_decision_detected": True,
+            "decisions": [],
+            "reasoning": "Claimed true but returned no decisions",
+        }
+    )
+    thread = make_test_thread()
+    detector = DecisionDetector(model_client=mock_client)
+    result = await detector.detect(thread)
+
+    assert result.is_decision_detected is False
+    assert result.total_decisions == 0
+    assert any("Set is_decision_detected to False because no valid candidate decisions were found" in n for n in result.processing_notes)
+
+
+@pytest.mark.asyncio
+async def test_boolean_and_decision_list_consistency_decisions_with_false():
+    """Verify that if verified decisions are present but model returned False, it is normalized to True."""
+    mock_client = MagicMock(spec=OllamaModelClient)
+    mock_client.generate_chat = AsyncMock(
+        return_value={
+            "is_decision_detected": False,
+            "decisions": [
+                {
+                    "decision_statement": "Adopt connection pooling",
+                    "status": "accepted",
+                    "confidence": 0.92,
+                    "supporting_comment_ids": ["101"],
+                }
+            ],
+            "reasoning": "Mistakenly flagged false despite presenting a decision",
+        }
+    )
+    thread = make_test_thread()
+    detector = DecisionDetector(model_client=mock_client)
+    result = await detector.detect(thread)
+
+    assert result.is_decision_detected is True
+    assert result.total_decisions == 1
+    assert any("Set is_decision_detected to True because 1 verified candidate decision(s) were present" in n for n in result.processing_notes)

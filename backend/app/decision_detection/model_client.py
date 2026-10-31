@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 import httpx
 
 from app.core.config import settings
@@ -98,6 +98,7 @@ class OllamaModelClient:
         system_prompt: Optional[str] = None,
         model: Optional[str] = None,
         temperature: float = 0.1,
+        format_schema: Optional[Union[Dict[str, Any], str]] = None,
     ) -> Dict[str, Any]:
         """
         Executes a structured chat completion against Ollama with JSON mode enabled.
@@ -117,11 +118,13 @@ class OllamaModelClient:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
+        format_constraint = format_schema if format_schema is not None else "json"
+
         payload = {
             "model": model_name,
             "messages": messages,
             "stream": False,
-            "format": "json",
+            "format": format_constraint,
             "options": {
                 "temperature": temperature,
             },
@@ -150,6 +153,18 @@ class OllamaModelClient:
                 message=f"Network error communicating with Ollama at {self.base_url}: {exc}",
                 details={"base_url": self.base_url, "error": str(exc)},
             ) from exc
+
+        # If Ollama rejected schema dict format, fall back to "json" string format
+        if response.status_code == 400 and isinstance(format_constraint, dict):
+            logger.warning("Ollama rejected JSON schema constraint with 400; retrying with format='json'")
+            payload["format"] = "json"
+            try:
+                response = await client.post(url, json=payload)
+            except Exception as exc:
+                raise AIServiceUnavailableException(
+                    message=f"Network error communicating with Ollama at {self.base_url}: {exc}",
+                    details={"base_url": self.base_url, "error": str(exc)},
+                ) from exc
 
         if response.status_code != 200:
             logger.error("Ollama returned status code %s: %s", response.status_code, response.text[:200])

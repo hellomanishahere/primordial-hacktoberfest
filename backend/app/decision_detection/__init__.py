@@ -4,6 +4,7 @@ from app.decision_detection.detector import DecisionDetector, detect_decisions
 from app.decision_detection.model_client import OllamaModelClient
 from app.decision_detection.prompts import (
     DECISION_DETECTION_SYSTEM_PROMPT,
+    build_correction_prompt,
     build_detection_user_prompt,
 )
 from app.decision_detection.schemas import (
@@ -24,6 +25,7 @@ __all__ = [
     # Prompts
     "DECISION_DETECTION_SYSTEM_PROMPT",
     "build_detection_user_prompt",
+    "build_correction_prompt",
     # Client & Detector
     "OllamaModelClient",
     "DecisionDetector",

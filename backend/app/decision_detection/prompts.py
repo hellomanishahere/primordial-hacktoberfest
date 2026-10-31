@@ -25,20 +25,53 @@ Your task is to analyze an engineering discussion from a GitHub Issue or Pull Re
    - If a candidate decision has no supporting comment in the transcript, DO NOT output it.
    - If NO engineering or architectural decisions exist in the discussion, set "is_decision_detected" to false and return an empty "decisions" list.
 
-4. OUTPUT FORMAT:
-   Return ONLY a valid, raw JSON object (without markdown code blocks, backticks, or preamble) matching this schema:
+4. MANDATORY OUTPUT JSON SCHEMA:
+   Every response MUST be a valid raw JSON object (without markdown code blocks, backticks, or preamble).
+   ALL of the following fields are strictly required:
+   - "is_decision_detected": (boolean, REQUIRED)
+     * Set to true if one or more engineering decisions (accepted, rejected, proposed, deferred, or unclear) were deliberated and identified.
+     * Set to false if NO engineering or architectural decisions were deliberated or identified.
+     * NEVER omit "is_decision_detected".
+   - "decisions": (array of objects, REQUIRED)
+     * If is_decision_detected is true: include one or more candidate decision objects.
+     * If is_decision_detected is false: MUST be an empty array [].
+     * NEVER omit "decisions".
+   - "reasoning": (string, REQUIRED)
+     * Concise summary explaining why decisions were or were not identified.
+
+   Each decision object in the "decisions" array MUST contain:
+   - "decision_statement": (string, REQUIRED) Active, declarative summary of the decision.
+   - "status": (string, REQUIRED) One of: "accepted", "rejected", "proposed", "deferred", "unclear".
+   - "confidence": (float between 0.0 and 1.0, REQUIRED).
+   - "supporting_comment_ids": (array of strings, REQUIRED) Exact comment IDs providing evidence (e.g. ["0", "123456"]).
+   - "rationale_summary": (string or null, optional) Summary of technical justification.
+
+   CRITICAL RULES:
+   - DO NOT omit "is_decision_detected".
+   - DO NOT omit "decisions".
+   - If decisions are present, "is_decision_detected" MUST be true.
+   - If no decisions are present, "is_decision_detected" MUST be false and "decisions" MUST be [].
+
+Example Valid Output (Decisions Detected):
 {
   "is_decision_detected": true,
-  "reasoning": "Brief overview of why decisions were or were not detected in this discussion.",
+  "reasoning": "Deliberation concluded with consensus to adopt Undici for native fetch support.",
   "decisions": [
     {
-      "decision_statement": "Clear declarative summary of the decision (e.g. 'Adopt Undici as the default HTTP client in Node.js core')",
+      "decision_statement": "Adopt Undici as built-in HTTP client in Node.js core",
       "status": "accepted",
       "confidence": 0.95,
       "supporting_comment_ids": ["0", "1029384"],
-      "rationale_summary": "Summary of technical justification or consensus."
+      "rationale_summary": "High performance and standards-compliant fetch implementation."
     }
   ]
+}
+
+Example Valid Output (No Decisions Detected):
+{
+  "is_decision_detected": false,
+  "reasoning": "The discussion pertains solely to a typo fix with no architectural deliberation.",
+  "decisions": []
 }
 """
 
@@ -59,5 +92,27 @@ def build_detection_user_prompt(
         "=== TRANSCRIPT START ===\n"
         f"{transcript}\n"
         "=== TRANSCRIPT END ===\n\n"
-        "Respond with a pure JSON object adhering to the schema."
+        "REQUIRED: Respond with a valid JSON object containing ALL required fields:\n"
+        "- 'is_decision_detected': boolean (true if decisions exist, false otherwise)\n"
+        "- 'decisions': array of candidate decision objects (or [] if none)\n"
+        "- 'reasoning': string summary\n\n"
+        "Do NOT omit 'is_decision_detected' or 'decisions'."
+    )
+
+
+def build_correction_prompt(
+    validation_error: str,
+    raw_response: str,
+) -> str:
+    """Builds a targeted correction prompt when model output fails validation or omits required fields."""
+    return (
+        "Your previous JSON response was rejected because it failed schema validation:\n"
+        f"Validation Error: {validation_error}\n\n"
+        f"Previous Output:\n{raw_response}\n\n"
+        "Please regenerate the entire JSON response adhering strictly to the required schema.\n"
+        "Ensure ALL of the following top-level fields are present:\n"
+        "1. 'is_decision_detected': boolean (true if decisions exist, false if empty)\n"
+        "2. 'decisions': array of candidate decision objects (or [] if none)\n"
+        "3. 'reasoning': string explanation\n\n"
+        "Do not omit 'is_decision_detected' or 'decisions'. Output pure JSON only."
     )
