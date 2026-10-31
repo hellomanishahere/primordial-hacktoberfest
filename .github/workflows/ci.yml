@@ -13,21 +13,38 @@ permissions:
   contents: read
 
 jobs:
-  repository-validation:
-    name: Repository Validation
+  application-validation:
+    name: Application Validation
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Validate required files
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Validate required files and example artifacts
         run: |
           test -f README.md
           test -f LICENSE
           test -f HACKATHON.md
           test -f .github/pull_request_template.md
           test -f .github/workflows/ci.yml
+          test -s examples/README.md
+          test -s examples/uv-config/input.json
+          test -s examples/uv-config/actual-output.json
 
-      - name: Validate README is not empty
-        run: test -s README.md
+      - name: Run unit and integration tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Run curated fixture benchmark
+        run: python benchmarks/evaluate.py
