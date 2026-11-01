@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRIMORDIAL — Decision Intelligence & Engineering Knowledge Recovery</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- ================= LEFT SIDEBAR ================= -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-wrap">
+          <div class="logo-badge-icon">⟁</div>
+          <span class="logo-title">PRIMORDIAL</span>
+        </div>
+        <span class="sub-brand-badge">Decision Intelligence</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- WORKSPACE -->
+        <div class="nav-section">
+          <span class="nav-section-title">Workspace</span>
+          <button class="nav-item active" data-tab="overview">
+            <span class="nav-icon">📊</span> Overview
+          </button>
+          <button class="nav-item" data-tab="analyze">
+            <span class="nav-icon">⚡</span> Analyze Discussion
+          </button>
+          <button class="nav-item" data-tab="decisions">
+            <span class="nav-icon">🔀</span> Decisions
+          </button>
+          <button class="nav-item" data-tab="library">
+            <span class="nav-icon">📚</span> ADR Library
+          </button>
+        </div>
+
+        <!-- INTELLIGENCE -->
+        <div class="nav-section">
+          <span class="nav-section-title">Intelligence</span>
+          <button class="nav-item" data-tab="search">
+            <span class="nav-icon">✨</span> Knowledge Search
+          </button>
+          <button class="nav-item" data-tab="radar">
+            <span class="nav-icon">🛰️</span> PR Radar
+          </button>
+          <button class="nav-item" data-tab="evaluation">
+            <span class="nav-icon">📈</span> Benchmarks & Eval
+          </button>
+        </div>
+
+        <!-- SYSTEM -->
+        <div class="nav-section">
+          <span class="nav-section-title">System</span>
+          <button class="nav-item" data-tab="settings">
+            <span class="nav-icon">⚙️</span> Settings
+          </button>
+        </div>
+      </nav>
+
+      <!-- SIDEBAR FOOTER -->
+      <div class="sidebar-footer">
+        <div class="system-status-pills">
+          <div class="sys-pill">
+            <span class="sys-label"><span class="sys-dot emerald"></span> GitHub App</span>
+            <span class="sys-val">primordial-ai</span>
+          </div>
+          <div class="sys-pill">
+            <span class="sys-label"><span class="sys-dot emerald"></span> Ollama Engine</span>
+            <span class="sys-val" id="sidebar-engine-tag">qwen2.5:32b</span>
+          </div>
+        </div>
+
+        <div class="user-profile-card">
+          <div class="user-avatar-initials">AC</div>
+          <div class="user-meta">
+            <div class="user-name">Alex Chen</div>
+            <div class="user-handle"><span class="status-dot-active"></span> @alexchen-dev</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN VIEWPORT ================= -->
+    <div class="main-wrapper">
+      <!-- TOP HEADER -->
+      <header class="top-header">
+        <div class="header-left-col">
+          <div class="repo-selector-pill" id="btn-repo-select">
+            <span class="repo-dot"></span>
+            <span>primordial-ai/core-engine</span>
+            <span class="repo-ver">v2.4</span>
+            <span style="font-size: 0.65rem; color: var(--text-dim);">▾</span>
+          </div>
+        </div>
+
+        <div class="header-search-wrap">
+          <span class="search-icon-pos">🔍</span>
+          <input type="text" class="header-search-input" id="global-search-input" placeholder="Search decisions, ADRs, commits...">
+          <span class="kbd-badge">⌘K</span>
+        </div>
+
+        <div class="header-right-col">
+          <button class="btn-header-cta" id="btn-header-analyze">
+            <span>⚡</span> Analyze Discussion
+          </button>
+          <button class="header-icon-btn" title="Notifications">
+            <span>🔔</span>
+            <span class="badge-unread-dot"></span>
+          </button>
+          <div class="user-avatar-initials" style="width: 32px; height: 32px; cursor: pointer;">AC</div>
+        </div>
+      </header>
+
+      <!-- VIEWPORT CONTENT AREA -->
+      <main class="viewport-content">
+
+        <!-- ================= SCREEN 1: OVERVIEW ================= -->
+        <section id="tab-overview" class="tab-view active">
+          <!-- Telemetry Sub-Banner -->
+          <div class="telemetry-banner">
+            <div class="telemetry-left">
+              <span class="telemetry-tag"><span class="pulse-dot"></span> TELEMETRY STREAM ACTIVE</span>
+              <span class="telemetry-hash">SHA-256 Consensus Vector Hash: 9f8a31e4c7d022b...</span>
+            </div>
+            <div class="telemetry-right">
+              <span>⚡ Inference Latency: <strong>42ms/prompt</strong></span>
+            </div>
+          </div>
+
+          <!-- Page Title Row -->
+          <div class="page-title-row">
+            <div class="page-title-wrap">
+              <h1>
+                Overview
+                <span class="header-pill-badge">ENGINEERING DECISIONS, NEVER LOST</span>
+              </h1>
+              <p class="page-subtitle">Recover the reasoning behind your code. Preserve knowledge. Build with institutional confidence.</p>
+            </div>
+            <div class="page-header-actions">
+              <div class="repo-selector-pill" style="background: #090e18;">
+                <span class="repo-dot"></span>
+                <span>primordial-ai/kernel (main)</span>
+                <span style="font-size: 0.65rem; color: var(--text-dim);">▾</span>
+              </div>
+              <div class="btn-filter-group">
+                <button class="btn-filter-tab active">Last 30 Days</button>
+                <button class="btn-filter-tab">All Time</button>
+              </div>
+              <button class="btn-primary-emerald" id="btn-overview-new-analysis">
+                <span>+</span> New Analysis
+              </button>
+            </div>
+          </div>
+
+          <!-- 5 Stats Cards Row -->
+          <div class="stats-grid-5">
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-label">REPOSITORIES ANALYZED</span>
+                <div class="stat-icon-wrap icon-emerald">📁</div>
+              </div>
+              <div class="stat-value">14</div>
+              <div class="stat-footer">
+                <span class="stat-trend-up">↗ +2 this week</span>
+                <span class="stat-trend-sub">8 stale</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-label">DISCUSSIONS PROCESSED</span>
+                <div class="stat-icon-wrap icon-amber">💬</div>
+              </div>
+              <div class="stat-value">1,842</div>
+              <div class="stat-footer">
+                <span class="stat-trend-up">● 98.4% parsed</span>
+                <span class="stat-trend-sub">29 unparsed</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-label">DECISIONS RECOVERED</span>
+                <div class="stat-icon-wrap icon-purple">🔀</div>
+              </div>
+              <div class="stat-value">429</div>
+              <div class="stat-footer">
+                <span class="stat-trend-up">↗ +34 this month</span>
+                <span class="stat-trend-sub">RFC Sync</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-label">VERIFIED DECISIONS</span>
+                <div class="stat-icon-wrap icon-cyan">🛡️</div>
+              </div>
+              <div class="stat-value">381</div>
+              <div class="stat-footer">
+                <span class="stat-trend-up">● 88.8% verified</span>
+                <span class="stat-trend-sub">48 pending</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-label">ADRS GENERATED</span>
+                <div class="stat-icon-wrap icon-emerald">📄</div>
+              </div>
+              <div class="stat-value">156</div>
+              <div class="stat-footer">
+                <span class="stat-trend-up">Auto-indexed</span>
+                <span class="stat-trend-sub">MADR v3.0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Two Column Layout: Main Table vs Right Timeline -->
+          <div class="two-col-grid">
+            <!-- Left Wide Column -->
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              <!-- Decision Distribution Card -->
+              <div class="card-panel">
+                <div class="card-panel-header">
+                  <div class="panel-title-wrap">
+                    <span style="color: var(--accent-emerald);">⊕</span>
+                    <h3 class="panel-title">Decision Distribution & Intelligence Breakdown</h3>
+                  </div>
+                  <span class="badge-counter">Total 429 Captured</span>
+                </div>
+
+                <div class="distribution-bar">
+                  <div class="bar-segment seg-accepted" style="width: 58%;" title="Accepted (58%)"></div>
+                  <div class="bar-segment seg-rejected" style="width: 22%;" title="Rejected (22%)"></div>
+                  <div class="bar-segment seg-rfc" style="width: 12%;" title="Under RFC (12%)"></div>
+                  <div class="bar-segment seg-deferred" style="width: 5%;" title="Deferred (5%)"></div>
+                  <div class="bar-segment seg-ambiguous" style="width: 3%;" title="Ambiguous (3%)"></div>
+                </div>
+
+                <div class="distribution-legend">
+                  <div class="legend-item"><span class="legend-dot" style="background: var(--accent-emerald);"></span> Accepted: <strong>248 (58%)</strong></div>
+                  <div class="legend-item"><span class="legend-dot" style="background: var(--accent-rose);"></span> Rejected: <strong>94 (22%)</strong></div>
+                  <div class="legend-item"><span class="legend-dot" style="background: var(--accent-amber);"></span> Under RFC: <strong>52 (12%)</strong></div>
+                  <div class="legend-item"><span class="legend-dot" style="background: var(--accent-cyan);"></span> Deferred: <strong>23 (5%)</strong></div>
+                  <div class="legend-item"><span class="legend-dot" style="background: #475569;"></span> Ambiguous: <strong>12 (3%)</strong></div>
+                </div>
+              </div>
+
+              <!-- Recently Recovered Decisions Table -->
+              <div class="card-panel">
+                <div class="card-panel-header">
+                  <div>
+                    <h3 class="panel-title">Recently Recovered Decisions</h3>
+                    <p style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">Automated extraction from pull request comment trees and commit trails</p>
+                  </div>
+                  <div class="btn-filter-group">
+                    <button class="btn-filter-tab active" data-table-filter="all">All (429)</button>
+                    <button class="btn-filter-tab" data-table-filter="accepted">Accepted</button>
+                    <button class="btn-filter-tab" data-table-filter="rejected">Rejected</button>
+                    <button class="btn-filter-tab" data-table-filter="deferred">Deferred</button>
+                  </div>
+                </div>
+
+                <div class="data-table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Decision & Architectural Context</th>
+                        <th>Repository</th>
+                        <th>Status</th>
+                        <th>Verification Grounding</th>
+                      </tr>
+                    </thead>
+                    <tbody id="overview-decisions-tbody">
+                      <tr>
+                        <td>
+                          <span class="decision-link-title">Adopt LSM-Tree over B+ Tree for Write-Ahead Log Compaction</span>
+                          <span class="context-sub">Ensures continuous crash-resilient telemetry persistence with 4x write speed.</span>
+                        </td>
+                        <td><span class="repo-pill-code">distributed-db/storage-raft</span></td>
+                        <td><span class="badge-status accepted">● ACCEPTED</span></td>
+                        <td><span class="verification-grounded-pill">✓ Verified by @sre-lead</span></td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <span class="decision-link-title">Reject Zero-Copy deserialization via Cap'n Proto due to memory fragmentation</span>
+                          <span class="context-sub">High arena churn caused unbounded virtual memory growth in long-running daemons.</span>
+                        </td>
+                        <td><span class="repo-pill-code">kernel/ipc-bus</span></td>
+                        <td><span class="badge-status rejected">● REJECTED</span></td>
+                        <td><span class="verification-grounded-pill">✓ Verified by maintainers</span></td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <span class="decision-link-title">Migrate Event Bus from Kafka to Internal NATS JetStream</span>
+                          <span class="context-sub">Reduces container deployment memory overhead by 85MB per edge worker node.</span>
+                        </td>
+                        <td><span class="repo-pill-code">core-engine/messaging</span></td>
+                        <td><span class="badge-status accepted">● ACCEPTED</span></td>
+                        <td><span class="verification-grounded-pill">✓ Code-Grounded</span></td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <span class="decision-link-title">Defer WebAssembly plugin sandbox isolation until v3.0 ABI stabilization</span>
+                          <span class="context-sub">Host function overhead exceeds latency budget for sub-millisecond route matching.</span>
+                        </td>
+                        <td><span class="repo-pill-code">api-gateway/runtime</span></td>
+                        <td><span class="badge-status deferred">● DEFERRED</span></td>
+                        <td><span class="verification-grounded-pill" style="color: var(--accent-amber);">ℹ Heuristic Extraction</span></td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <span class="decision-link-title">Enforce Quorum Lease mechanism instead of Raft Heartbeat amplification</span>
+                          <span class="context-sub">Avoids linear CPU spikes during high concurrent read telemetry spikes.</span>
+                        </td>
+                        <td><span class="repo-pill-code">distributed-db/consensus</span></td>
+                        <td><span class="badge-status accepted">● ACCEPTED</span></td>
+                        <td><span class="verification-grounded-pill">✓ Verified</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="table-pagination-footer">
+                  <span>Showing 5 of 429 decisions</span>
+                  <div class="pagination-controls">
+                    <button class="page-btn">Previous</button>
+                    <span>Page 1 / 86</span>
+                    <button class="page-btn">Next</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Timeline & Health -->
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              <!-- Live Intelligence Timeline -->
+              <div class="card-panel">
+                <div class="card-panel-header">
+                  <div class="panel-title-wrap">
+                    <span class="pulse-dot"></span>
+                    <h3 class="panel-title">Live Intelligence Timeline</h3>
+                  </div>
+                </div>
+
+                <div class="timeline-feed">
+                  <div class="timeline-event">
+                    <div class="timeline-icon-dot" style="color: var(--accent-cyan);">💬</div>
+                    <div class="timeline-body">
+                      <div class="timeline-action">
+                        <span>Discussion analyzed</span>
+                        <span class="timeline-time">12m ago</span>
+                      </div>
+                      <div class="timeline-detail">#1428 WAL compaction strategy (48 comments, 6 authors)</div>
+                    </div>
+                  </div>
+
+                  <div class="timeline-event">
+                    <div class="timeline-icon-dot" style="color: var(--accent-rose);">🛑</div>
+                    <div class="timeline-body">
+                      <div class="timeline-action">
+                        <span>Decision detected</span>
+                        <span class="timeline-time">1h ago</span>
+                      </div>
+                      <div class="timeline-detail">Zero-Copy Cap'n Proto rejected due to heap frag concerns</div>
+                    </div>
+                  </div>
+
+                  <div class="timeline-event">
+                    <div class="timeline-icon-dot" style="color: var(--accent-emerald);">🛡️</div>
+                    <div class="timeline-body">
+                      <div class="timeline-action">
+                        <span>Evidence verified</span>
+                        <span class="timeline-time">3h ago</span>
+                      </div>
+                      <div class="timeline-detail">Grounded with commit <code class="repo-pill-code">d4a9e2</code> in rust-vmm</div>
+                    </div>
+                  </div>
+
+                  <div class="timeline-event">
+                    <div class="timeline-icon-dot" style="color: var(--accent-purple);">📄</div>
+                    <div class="timeline-body">
+                      <div class="timeline-action">
+                        <span>ADR generated</span>
+                        <span class="timeline-time">1d ago</span>
+                      </div>
+                      <div class="timeline-detail">ADR-0142: 'NATS JetStream Adoption' created automatically.</div>
+                    </div>
+                  </div>
+
+                  <div class="timeline-event">
+                    <div class="timeline-icon-dot" style="color: var(--accent-amber);">🛰️</div>
+                    <div class="timeline-body">
+                      <div class="timeline-action">
+                        <span>PR Radar triggered</span>
+                        <span class="timeline-time">1d ago</span>
+                      </div>
+                      <div class="timeline-detail">PR #1842: Flagged 2 conflicting past decisions regarding buffer recycling.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <a href="#audit" style="font-size: 0.74rem; color: var(--accent-emerald); font-weight: 600; text-align: right; display: block; margin-top: 0.25rem;">View Complete Audit Trail ↗</a>
+              </div>
+
+              <!-- System & Sync Health -->
+              <div class="card-panel">
+                <div class="card-panel-header">
+                  <div class="panel-title-wrap">
+                    <span style="color: var(--accent-emerald);">🛡️</span>
+                    <h3 class="panel-title">System & Sync Health</h3>
+                  </div>
+                  <span class="badge-status accepted">OPERATIONAL</span>
+                </div>
+
+                <div class="health-metrics-list">
+                  <div class="health-row">
+                    <span class="health-title">GitHub App Webhook</span>
+                    <span class="health-val-badge">99.9% Uptime</span>
+                  </div>
+                  <div class="health-row">
+                    <span class="health-title">Local Vector Store (Qdrant)</span>
+                    <span class="health-val-badge">42,910 Chunks</span>
+                  </div>
+                  <div class="health-row">
+                    <span class="health-title">Knowledge Staleness</span>
+                    <span class="health-val-badge">4.2% Drift (Excellent)</span>
+                  </div>
+                  <div class="health-row" style="flex-direction: column; align-items: flex-start; gap: 0.35rem; margin-top: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.72rem;">
+                      <span style="color: var(--text-dim);">Active Inference: <strong>qwen2.5:32b</strong></span>
+                      <span style="color: var(--accent-emerald);">VRAM: 18.4GB / 24GB</span>
+                    </div>
+                    <div style="width: 100%; height: 5px; background: #080c14; border-radius: 3px; overflow: hidden;">
+                      <div style="width: 76%; height: 100%; background: var(--accent-emerald);"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Engine Architecture Card -->
+              <div class="card-panel" style="background: linear-gradient(135deg, #0d131f 0%, #061813 100%); border-color: rgba(0, 229, 153, 0.25);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase;">ENGINE ARCHITECTURE</span>
+                  <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--accent-emerald);">v2.4-consensus</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.6rem; margin-top: 0.25rem;">
+                  <span class="pulse-dot"></span>
+                  <span style="font-size: 0.82rem; font-weight: 700; color: #ffffff;">Deterministic Audits Active</span>
+                </div>
+                <p style="font-size: 0.73rem; color: var(--text-secondary); line-height: 1.45;">Continuous background daemon scans merged pull requests against the 429 canonical ADR specifications.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom: Active Consensus Graph Topology -->
+          <div class="card-panel">
+            <div class="card-panel-header">
+              <div>
+                <div class="panel-title-wrap">
+                  <span style="color: var(--accent-emerald);">✢</span>
+                  <h3 class="panel-title">Active Consensus Graph Topology</h3>
+                </div>
+                <p style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">Lineage mapping across microservices and architectural decisions</p>
+              </div>
+              <span class="badge-status accepted">Realtime Synced</span>
+            </div>
+
+            <div class="graph-container">
+              <svg class="graph-svg" viewBox="0 0 900 130" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="link-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#00e599" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.6"/>
+                  </linearGradient>
+                  <filter id="glow-filter" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                  </filter>
+                </defs>
+
+                <!-- Dotted Connection Lines -->
+                <line x1="120" y1="65" x2="280" y2="40" stroke="#00e599" stroke-width="2" stroke-dasharray="4,4" opacity="0.7"/>
+                <line x1="280" y1="40" x2="460" y2="35" stroke="#00e599" stroke-width="2" opacity="0.9"/>
+                <line x1="280" y1="40" x2="380" y2="95" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3,3" opacity="0.6"/>
+                <line x1="380" y1="95" x2="580" y2="90" stroke="#f59e0b" stroke-width="2" opacity="0.7"/>
+                <line x1="460" y1="35" x2="580" y2="90" stroke="url(#link-grad)" stroke-width="2" opacity="0.8"/>
+                <line x1="580" y1="90" x2="720" y2="65" stroke="#00e599" stroke-width="2" stroke-dasharray="4,4" opacity="0.7"/>
+
+                <!-- Nodes -->
+                <!-- Node 1: #1042 -->
+                <g transform="translate(120, 65)" class="graph-node-g">
+                  <circle r="16" fill="#0d241c" stroke="#00e599" stroke-width="2" filter="url(#glow-filter)"/>
+                  <text y="4" text-anchor="middle" fill="#00e599" font-family="JetBrains Mono" font-size="9" font-weight="700">#1042</text>
+                  <text y="28" text-anchor="middle" fill="#94a3b8" font-size="8">uv (TOML)</text>
+                </g>
+
+                <!-- Node 2: #112948 -->
+                <g transform="translate(280, 40)" class="graph-node-g">
+                  <circle r="18" fill="#063b2a" stroke="#00e599" stroke-width="2.5" filter="url(#glow-filter)"/>
+                  <text y="4" text-anchor="middle" fill="#ffffff" font-family="JetBrains Mono" font-size="9" font-weight="800">#112948</text>
+                  <text y="30" text-anchor="middle" fill="#00e599" font-size="8" font-weight="700">K8s (PSI)</text>
+                </g>
+
+                <!-- Node 3: #88219 -->
+                <g transform="translate(460, 35)" class="graph-node-g">
+                  <circle r="16" fill="#0a2034" stroke="#38bdf8" stroke-width="2" filter="url(#glow-filter)"/>
+                  <text y="4" text-anchor="middle" fill="#38bdf8" font-family="JetBrains Mono" font-size="9" font-weight="700">#88219</text>
+                  <text y="28" text-anchor="middle" fill="#94a3b8" font-size="8">Discourse</text>
+                </g>
+
+                <!-- Node 4: #780 -->
+                <g transform="translate(380, 95)" class="graph-node-g">
+                  <circle r="15" fill="#261b0c" stroke="#f59e0b" stroke-width="2" filter="url(#glow-filter)"/>
+                  <text y="4" text-anchor="middle" fill="#f59e0b" font-family="JetBrains Mono" font-size="9" font-weight="700">#780</text>
+                  <text y="27" text-anchor="middle" fill="#94a3b8" font-size="8">httpx</text>
+                </g>
+
+                <!-- Node 5: #42823 -->
+                <g transform="translate(580, 90)" class="graph-node-g">
+                  <circle r="16" fill="#201133" stroke="#a855f7" stroke-width="2" filter="url(#glow-filter)"/>
+                  <text y="4" text-anchor="middle" fill="#a855f7" font-family="JetBrains Mono" font-size="9" font-weight="700">#42823</text>
+                  <text y="28" text-anchor="middle" fill="#94a3b8" font-size="8">PEP 735</text>
+                </g>
+
+                <!-- Node 6: Master Anchor -->
+                <g transform="translate(720, 65)" class="graph-node-g">
+                  <circle r="14" fill="#0d241c" stroke="#00e599" stroke-width="1.5"/>
+                  <circle r="5" fill="#00e599"/>
+                  <text y="26" text-anchor="middle" fill="#94a3b8" font-size="8">Canonical</text>
+                </g>
+              </svg>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">
+              Graph Density: 1.48 • Depth: 4 Nodes
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= SCREEN 2: ANALYZE DISCUSSION ================= -->
+        <section id="tab-analyze" class="tab-view">
+          <!-- Page Title Row -->
+          <div class="page-title-row">
+            <div class="page-title-wrap">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="sub-brand-badge" style="font-size: 0.62rem;">REVERSE-ENGINEER DISCUSSIONS</span>
+                <span style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--accent-amber);">v2.4.9 AST-Grounding</span>
+              </div>
+              <h1>Analyze Discussion</h1>
+              <p class="page-subtitle">Recover engineering decisions from GitHub conversations, PR reviews, and issue threads. Primordial extracts rationale, maps opposing arguments, and grounds findings in verifiable commits.</p>
+            </div>
+          </div>
+
+          <!-- URL Input Card -->
+          <div class="analyze-input-card">
+            <div class="url-input-row">
+              <div class="url-input-wrap">
+                <span class="url-input-glyph">{ }</span>
+                <input type="text" id="discussion-url-input" class="url-text-input" value="https://github.com/kubernetes/kubernetes/pull/112948" placeholder="Paste GitHub Issue / PR or Discourse topic URL...">
+                <button class="btn-input-clear" id="btn-clear-url" title="Clear">✕</button>
+              </div>
+              <button class="btn-primary-emerald" id="btn-fetch" style="font-size: 0.88rem; padding: 0.7rem 1.5rem;">
+                <span>⚡</span> Analyze Discussion
+              </button>
+            </div>
+
+            <!-- Quick Examples Chips -->
+            <div class="quick-examples-row">
+              <span class="examples-label">QUICK EXAMPLES:</span>
+              <button class="example-chip" data-sample-id="gh:kubernetes/kubernetes/pull/112948">↳ kubernetes/kubernetes#112948 (Kubelet eviction threshold)</button>
+              <button class="example-chip" data-sample-id="gh:astral-sh/uv/issues/1042">↳ astral-sh/uv#1042 (Config: TOML vs YAML vs JSON)</button>
+              <button class="example-chip" data-sample-id="dc:meta.discourse.org/t/embedded-cache-storage-engine/88219">↳ meta.discourse.org#88219 (SQLite WAL vs RocksDB)</button>
+              <button class="example-chip" data-sample-id="gh:encode/httpx/issues/780">↳ encode/httpx#780 (Async Transport: AnyIO vs Curio)</button>
+              <button class="example-chip" data-sample-id="dc:discuss.python.org/t/pep-735-dependency-groups-in-pyproject-toml/42823">↳ discuss.python.org#42823 (PEP 735 Groups)</button>
+            </div>
+          </div>
+
+          <!-- 8-Stage Inference & Synthesis Stepper -->
+          <div class="pipeline-stepper-card">
+            <div class="pipeline-stepper-header">
+              <div class="pipeline-title-group">
+                <span style="color: var(--accent-emerald);">⟁</span>
+                <h3 class="pipeline-title">Inference & Synthesis Pipeline</h3>
+                <span class="badge-pipeline-status" id="pipeline-status-badge">8 STAGES COMPLETED</span>
+              </div>
+              <div class="pipeline-legend">
+                <span><span class="legend-dot-state dot-completed"></span>Completed</span>
+                <span><span class="legend-dot-state dot-processing"></span>Processing</span>
+                <span><span class="legend-dot-state dot-failed"></span>Failed</span>
+                <span><span class="legend-dot-state dot-pending"></span>Pending</span>
+              </div>
+            </div>
+
+            <div class="stages-stepper-grid">
+              <div class="stage-step-card completed" id="step-card-1">
+                <div class="stage-step-top"><span class="stage-step-num">01</span><span class="stage-check-icon">✓</span></div>
+                <div class="stage-step-name">GitHub Ingestion</div>
+                <div class="stage-step-sub" id="step-sub-1">54 comments fet...</div>
+              </div>
+
+              <div class="stage-step-card completed" id="step-card-2">
+                <div class="stage-step-top"><span class="stage-step-num">02</span><span class="stage-check-icon">✓</span></div>
+                <div class="stage-step-name">Preprocessing</div>
+                <div class="stage-step-sub" id="step-sub-2">Disambiguated</div>
+              </div>
+
+              <div class="stage-step-card completed" id="step-card-3">
+                <div class="stage-step-top"><span class="stage-step-num">03</span><span class="stage-check-icon">✓</span></div>
+                <div class="stage-step-name">Decision Detection</div>
+                <div class="stage-step-sub" id="step-sub-3">3 found (1 prime)</div>
+              </div>
+
+              <div class="stage-step-card completed" id="step-card-4">
+                <div class="stage-step-top"><span class="stage-step-num">04</span><span class="stage-check-icon">✓</span></div>
+                <div class="stage-step-name">Rationale Extract</div>
+                <div class="stage-step-sub" id="step-sub-4">Weighted graph</div>
+              </div>
+
+              <div class="stage-step-card completed" id="step-card-5">
+                <div class="stage-step-top"><span class="stage-step-num">05</span><span class="stage-check-icon">✓</span></div>
+                <div class="stage-step-name">Code Grounding</div>
+                <div class="stage-step-sub" id="step-sub-5">4 commits linked</div>
+              </div>
+
+              <div class="stage-step-card completed" id="step-card-6">
+                <div class="stage-step-top"><span class="stage-step-num">06</span><span class="stage-check-icon">✓</span></div>
+                <div class="stage-step-name">Evidence Verify</div>
+                <div class="stage-step-sub" id="step-sub-6">96% confidence</div>
+              </div>
+
+              <div class="stage-step-card completed" id="step-card-7">
+                <div class="stage-step-top"><span class="stage-step-num">07</span><span class="stage-check-icon">✓</span></div>
+                <div class="stage-step-name">ADR Generation</div>
+                <div class="stage-step-sub" id="step-sub-7">ADR-0089 draft</div>
+              </div>
+
+              <div class="stage-step-card completed" id="step-card-8">
+                <div class="stage-step-top"><span class="stage-step-num">08</span><span class="stage-check-icon">✓</span></div>
+                <div class="stage-step-name">Vector Storage</div>
+                <div class="stage-step-sub" id="step-sub-8">Qdrant synced</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2-Column Split Details -->
+          <div class="decision-deepdive-grid">
+            <!-- Left Main Column -->
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              <!-- Main Decision Card -->
+              <div class="decision-card-main">
+                <div class="decision-meta-badges">
+                  <span class="badge-accepted-pill" id="disc-status-badge">ACCEPTED DECISION</span>
+                  <span class="badge-confidence-pill" id="disc-conf-badge">● 98.2% High Confidence</span>
+                  <span class="meta-target-pill" id="disc-target-pill">Target: v1.28 • PR: #112948</span>
+                </div>
+
+                <h2 class="decision-main-title" id="disc-main-title">
+                  Adopt Soft Eviction Grace Period with Cgroups v2 Memory Pressure Stalls (PSI) instead of Hard Kill
+                </h2>
+
+                <div class="decision-author-row">
+                  <span>Author: <strong class="author-highlight" id="disc-author-name">Alexandre Cesena (@acesena)</strong></span>
+                  <span>•</span>
+                  <span>SIG: <strong class="sig-highlight" id="disc-sig-name">sig-node</strong></span>
+                  <span>•</span>
+                  <span id="disc-subsystem-name">Kubelet Core Subsystem</span>
+                </div>
+
+                <!-- Rationale Box -->
+                <div class="rationale-container">
+                  <div class="rationale-header">
+                    <span class="rationale-title">💡 Why This Decision Was Made</span>
+                    <span class="badge-semantic">SEMANTIC SYNTHESIS</span>
+                  </div>
+                  <span class="rationale-eyebrow">CORE ARCHITECTURAL RATIONALE</span>
+                  <p class="rationale-text" id="disc-rationale-text">
+                    Hard eviction thresholds triggered cascading pod terminations under transient burst loads. By utilizing Cgroups v2 PSI (Pressure Stall Information), Kubelet can measure actual memory thrashing before executing SIGKILL.
+                  </p>
+                </div>
+
+                <!-- Supporting vs Opposing Grid -->
+                <div class="arguments-2col">
+                  <div class="arg-panel supporting">
+                    <div class="arg-panel-title"><span>🛡️</span> Supporting Arguments</div>
+                    <ul class="arg-bullets" id="disc-supporting-list">
+                      <li>Reduces spurious job evictions by <strong class="text-emerald">74%</strong> during batch ML workloads.</li>
+                      <li>Native kernel PSI metrics avoid periodic procfs polling overhead and CPU latency spikes.</li>
+                      <li>Deterministic telemetry pipeline shared uniformly with containerd runtime.</li>
+                    </ul>
+                  </div>
+
+                  <div class="arg-panel opposing">
+                    <div class="arg-panel-title"><span>⚠️</span> Opposing Arguments & Concerns</div>
+                    <ul class="arg-bullets" id="disc-opposing-list">
+                      <li>Requires Linux kernel <strong class="text-amber">&gt;= 5.8</strong> on all cluster nodes, complicating legacy distro rollouts.</li>
+                      <li>Slightly delayed reaction (<strong class="text-amber">500ms grace window</strong>) under catastrophic sudden memory spikes.</li>
+                      <li>Initial backward-compatibility burden for clusters running hybrid cgroups v1 nodes.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Recovered Rejected Alternatives -->
+                <div class="rejected-alternatives-box">
+                  <div class="rejected-box-header">
+                    <div class="rejected-box-title"><span>🛑</span> Recovered Rejected Alternatives</div>
+                    <span style="font-size: 0.68rem; color: var(--text-dim);" id="rejected-count-sub">2 Candidate Paths Abandoned</span>
+                  </div>
+
+                  <div class="rejected-items-list" id="disc-rejected-list">
+                    <div class="rejected-item-entry">
+                      <div class="rejected-item-headline">
+                        <span class="badge-tag-rejected">REJECTED</span>
+                        <span class="rejected-item-name">Static 10% headroom reservation</span>
+                      </div>
+                      <p class="rejected-item-reason">Rejected due to severe resource under-utilization in high-density multi-tenant nodes. Wasted up to 64GB RAM per HPC bare-metal box.</p>
+                    </div>
+
+                    <div class="rejected-item-entry">
+                      <div class="rejected-item-headline">
+                        <span class="badge-tag-rejected">REJECTED</span>
+                        <span class="rejected-item-name">Userspace OOM daemon (systemd-oomd integration)</span>
+                      </div>
+                      <p class="rejected-item-reason">Rejected due to unresolvable race conditions with container runtime shim during high socket stress events.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Trade-offs & Consequences -->
+                <div class="consequences-grid">
+                  <div class="consequence-card">
+                    <div class="consequence-title"><span style="color: var(--accent-emerald);">📉</span> Telemetry Footprint Drop</div>
+                    <p class="consequence-desc">Memory telemetry overhead reduced by 18MB per worker node.</p>
+                  </div>
+                  <div class="consequence-card">
+                    <div class="consequence-title"><span style="color: var(--accent-amber);">🔗</span> Topology Dependency</div>
+                    <p class="consequence-desc">Requires strict cgroupv2 systemd unified hierarchy mount points.</p>
+                  </div>
+                </div>
+
+                <!-- Eviction Thrash Comparison SVG Chart -->
+                <div class="chart-box-panel">
+                  <div class="chart-header-row">
+                    <span class="chart-title"><span>📉</span> Eviction Thrash Comparison</span>
+                    <span class="chart-synthetic-tag">Synthetic Load • 128 Pods / 256GB Host</span>
+                  </div>
+
+                  <div class="svg-chart-wrapper">
+                    <svg viewBox="0 0 540 100" style="width: 100%; height: 100%;" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="amber-curve" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.35"/>
+                          <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0"/>
+                        </linearGradient>
+                        <linearGradient id="green-curve" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stop-color="#00e599" stop-opacity="0.35"/>
+                          <stop offset="100%" stop-color="#00e599" stop-opacity="0.0"/>
+                        </linearGradient>
+                      </defs>
+
+                      <!-- Grid lines -->
+                      <line x1="0" y1="20" x2="540" y2="20" stroke="#151d2d" stroke-dasharray="2,2"/>
+                      <line x1="0" y1="50" x2="540" y2="50" stroke="#151d2d" stroke-dasharray="2,2"/>
+                      <line x1="0" y1="80" x2="540" y2="80" stroke="#151d2d" stroke-dasharray="2,2"/>
+
+                      <!-- Legacy Hard OOM curve (Bell shape spike) -->
+                      <path d="M 0,85 Q 160,85 220,70 Q 270,10 320,70 Q 380,85 540,85 L 540,95 L 0,95 Z" fill="url(#amber-curve)"/>
+                      <path d="M 0,85 Q 160,85 220,70 Q 270,10 320,70 Q 380,85 540,85" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+
+                      <!-- Adopted PSI Grace Period (Flat low curve) -->
+                      <path d="M 0,90 Q 240,90 270,82 Q 300,90 540,90 L 540,95 L 0,95 Z" fill="url(#green-curve)"/>
+                      <path d="M 0,90 Q 240,90 270,82 Q 300,90 540,90" fill="none" stroke="#00e599" stroke-width="2.5"/>
+                    </svg>
+                  </div>
+
+                  <div class="chart-legend-row">
+                    <span class="chart-leg-orange">■ Legacy Hard OOM (42 spurious kills/hour)</span>
+                    <span class="chart-leg-green">■ Adopted PSI Grace Period (2 kills/hour)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Sidebar Column: Ground Truth & Links -->
+            <div class="sidebar-panel-right">
+              <!-- Verifiable Ground Truth -->
+              <div class="ground-truth-card">
+                <div class="ground-truth-header">
+                  <span class="gt-title"><span>🛡️</span> Verifiable Ground Truth</span>
+                  <span class="badge-verified-green">VERIFIED</span>
+                </div>
+
+                <div class="quotes-stream" id="disc-quotes-stream">
+                  <!-- Derek Quote -->
+                  <div class="quote-bubble">
+                    <div class="quote-author-line">
+                      <span class="quote-author">@derekwaynec <span style="font-weight: 400; color: var(--text-dim);">(Node SIG Co-chair)</span></span>
+                      <span class="badge-maintainer">Maintainer</span>
+                    </div>
+                    <p class="quote-body-text">"We agreed in the weekly sync that PSI gives us kernel-level fidelity without the poll storm. Let's merge the prototype branch."</p>
+                    <div class="quote-meta-row">
+                      <span>Oct 14, 2023 • 18:42 UTC</span>
+                      <a href="https://github.com/kubernetes/kubernetes/pull/112948#issuecomment-18" target="_blank" class="quote-link">Comment #18 ↗</a>
+                    </div>
+                  </div>
+
+                  <!-- Brian Grant Quote -->
+                  <div class="quote-bubble">
+                    <div class="quote-author-line">
+                      <span class="quote-author">@bgrant0607 <span style="font-weight: 400; color: var(--text-dim);">(Architect)</span></span>
+                      <span class="badge-maintainer">Maintainer</span>
+                    </div>
+                    <p class="quote-body-text">"Static 10% headroom is dead on arrival for our multi-tenant workloads. The numbers in benchmarks/psi-v2.md confirm this."</p>
+                    <div class="quote-meta-row">
+                      <span>Oct 15, 2023 • 09:12 UTC</span>
+                      <a href="https://github.com/kubernetes/kubernetes/pull/112948#issuecomment-24" target="_blank" class="quote-link">Comment #24 ↗</a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Grounded Code AST Links -->
+                <div class="ast-links-container">
+                  <span class="ast-section-eyebrow">GROUNDED CODE AST LINKS</span>
+                  <div class="ast-link-item">
+                    <span class="ast-file-code">pkg/kubelet/eviction/eviction_manager.go L142-218</span>
+                    <span class="ast-file-desc">Threshold polling replacement with notify stall event</span>
+                  </div>
+                  <div class="ast-link-item">
+                    <div class="ast-commit-row">
+                      <span class="commit-hash-pill">⚲ e81f4c9</span>
+                      <span style="color: var(--accent-emerald);">Merged into master</span>
+                    </div>
+                    <span class="commit-msg">"eviction: integrate PSI threshold evaluation loop"</span>
+                  </div>
+                </div>
+
+                <!-- Action Buttons Stack -->
+                <div class="action-buttons-stack">
+                  <button class="btn-secondary-action" id="btn-export-madr">
+                    <span>📥</span> Export to ADR-0089.md
+                  </button>
+                  <button class="btn-secondary-action" id="btn-add-index">
+                    <span>📑</span> Add to Decisions Index
+                  </button>
+                  <button class="btn-secondary-action" id="btn-share-permalink">
+                    <span>🔗</span> Share Permalink
+                  </button>
+                </div>
+
+                <!-- Discussion Velocity -->
+                <div class="velocity-box">
+                  <div class="velocity-header">
+                    <span class="velocity-title">DISCUSSION VELOCITY</span>
+                    <span class="badge-consensus">High Consensus</span>
+                  </div>
+                  <div class="velocity-stats-row">
+                    <div><div class="v-num" id="v-participants">14</div><div class="v-label">Participants</div></div>
+                    <div><div class="v-num" id="v-comments">54</div><div class="v-label">Comments</div></div>
+                    <div><div class="v-num" id="v-resolution">3d 4h</div><div class="v-label">Resolution</div></div>
+                  </div>
+                </div>
+
+                <div class="view-state-switcher">
+                  <span>View State:</span>
+                  <span class="state-pill active" id="btn-state-active">Active</span>
+                  <span class="state-pill" id="btn-state-empty">Empty</span>
+                  <span class="state-pill" id="btn-state-error">Error</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= SCREEN 3: DECISIONS ================= -->
+        <section id="tab-decisions" class="tab-view">
+          <div class="page-title-row">
+            <div class="page-title-wrap">
+              <h1>Architectural Decisions Index</h1>
+              <p class="page-subtitle">Canonical repository of recovered engineering consensus, accepted decisions, and rejected alternatives.</p>
+            </div>
+            <div class="page-header-actions">
+              <input type="text" id="decisions-search-input" class="header-search-input" style="width: 280px;" placeholder="Filter decisions...">
+            </div>
+          </div>
+
+          <div id="decisions-grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1rem;">
+            <!-- Dynamically populated decision cards -->
+          </div>
+        </section>
+
+        <!-- ================= SCREEN 4: ADR LIBRARY ================= -->
+        <section id="tab-library" class="tab-view">
+          <div class="page-title-row">
+            <div class="page-title-wrap">
+              <h1>ADR Specification Library</h1>
+              <p class="page-subtitle">Markdown Architectural Decision Records (MADR 3.0.0 format) formatted for git commit trails.</p>
+            </div>
+            <div class="page-header-actions">
+              <button class="btn-primary-emerald" id="btn-download-all-adrs">
+                <span>📦</span> Download All ADRs (.zip)
+              </button>
+            </div>
+          </div>
+
+          <div class="card-panel">
+            <div class="card-panel-header">
+              <div class="panel-title-wrap">
+                <span style="color: var(--accent-emerald);">📄</span>
+                <h3 class="panel-title" id="madr-preview-title">ADR-0089: Adopt Soft Eviction Grace Period with Cgroups v2 PSI</h3>
+              </div>
+              <button class="page-btn" id="btn-copy-madr-full">📋 Copy Markdown</button>
+            </div>
+            <pre style="background: #060910; border: 1px solid var(--border-card); border-radius: var(--radius-sm); padding: 1.25rem; font-family: var(--font-mono); font-size: 0.78rem; color: #cbd5e1; line-height: 1.6; overflow-x: auto; max-height: 550px;"><code id="madr-preview-code"></code></pre>
+          </div>
+        </section>
+
+        <!-- ================= SCREEN 5: HISTORICAL PR RADAR ================= -->
+        <section id="tab-radar" class="tab-view">
+          <div class="page-title-row">
+            <div class="page-title-wrap">
+              <h1>Historical Decision Radar</h1>
+              <p class="page-subtitle">Continuous pull request scanner that prevents regression of previously debated and rejected architectural proposals.</p>
+            </div>
+            <div class="page-header-actions">
+              <div class="btn-filter-group">
+                <button class="btn-filter-tab active" id="btn-radar-rocksdb">⚠️ Re-proposing RocksDB (#3120)</button>
+                <button class="btn-filter-tab" id="btn-radar-yaml">⚠️ Re-proposing YAML (#2041)</button>
+                <button class="btn-filter-tab" id="btn-radar-clean">✅ Clean PR (Valid Edit)</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="two-col-grid">
+            <div class="card-panel">
+              <h3 class="panel-title">Pull Request Simulator</h3>
+
+              <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                <div>
+                  <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">PR Title</label>
+                  <input type="text" id="pr-title-input" class="url-text-input" style="padding: 0.55rem 0.85rem;" value="Add RocksDB storage backend for edge telemetry cache">
+                </div>
+
+                <div>
+                  <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">PR Description</label>
+                  <textarea id="pr-desc-input" rows="3" class="url-text-input" style="padding: 0.55rem 0.85rem; height: auto;">Replaces default SQLite cache with RocksDB LSM-tree to improve peak write throughput for distributed edge nodes.</textarea>
+                </div>
+
+                <div>
+                  <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Changed Files</label>
+                  <textarea id="pr-files-input" rows="3" class="url-text-input" style="padding: 0.55rem 0.85rem; height: auto;">lib/storage/edge_cache.rb
+config/storage.yml
+src/storage/rocksdb_driver.cc</textarea>
+                </div>
+
+                <div>
+                  <label style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Patch Diff</label>
+                  <textarea id="pr-diff-input" rows="4" class="url-text-input" style="padding: 0.55rem 0.85rem; height: auto;">+ require 'rocksdb'
++ class EdgeCache::RocksBackend
++   def initialize
++     @db = RocksDB.open('/var/data/edge')</textarea>
+                </div>
+
+                <button class="btn-primary-emerald" id="btn-scan-radar" style="justify-content: center; padding: 0.75rem;">
+                  <span>🛰️</span> Run Radar Scan Against Engineering Memory
+                </button>
+              </div>
+            </div>
+
+            <!-- Radar Alerts Output -->
+            <div class="card-panel" style="background: #090e18;">
+              <div class="card-panel-header">
+                <div class="panel-title-wrap">
+                  <span style="color: var(--accent-rose);">📡</span>
+                  <h3 class="panel-title">Radar Intelligence Alerts</h3>
+                </div>
+                <span class="badge-status rejected" id="radar-alerts-badge">1 ALERT</span>
+              </div>
+
+              <div id="radar-alerts-container" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= SCREEN 6: BENCHMARKS & EVALUATION ================= -->
+        <section id="tab-evaluation" class="tab-view">
+          <div class="page-title-row">
+            <div class="page-title-wrap">
+              <h1>Problem Statement 06 Automated Benchmarks</h1>
+              <p class="page-subtitle">Quantitative evaluation validating consensus extraction, rejected recovery, evidence verification, and radar precision.</p>
+            </div>
+            <div class="page-header-actions">
+              <button class="btn-primary-emerald" id="btn-run-eval">
+                <span>▶</span> Run Benchmark Suite
+              </button>
+            </div>
+          </div>
+
+          <div class="stats-grid-5" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="stat-card" data-metric="decisions" style="cursor: pointer;">
+              <div class="stat-card-header">
+                <span class="stat-label">DECISION EXTRACTION</span>
+                <div class="stat-icon-wrap icon-emerald">✓</div>
+              </div>
+              <div class="stat-value" id="metric-acc">100%</div>
+              <div class="stat-footer"><span class="stat-trend-up">Ground-truth consensus match</span></div>
+            </div>
+
+            <div class="stat-card" data-metric="rejected" style="cursor: pointer; border-color: rgba(0, 229, 153, 0.4); box-shadow: 0 0 15px rgba(0, 229, 153, 0.15);">
+              <div class="stat-card-header">
+                <span class="stat-label">REJECTED RECOVERY</span>
+                <div class="stat-icon-wrap icon-emerald">★</div>
+              </div>
+              <div class="stat-value text-emerald" id="metric-rejected">100%</div>
+              <div class="stat-footer"><span class="stat-trend-up">Zero missed rejected options (PS6)</span></div>
+            </div>
+
+            <div class="stat-card" data-metric="quotes" style="cursor: pointer;">
+              <div class="stat-card-header">
+                <span class="stat-label">QUOTE VERIFICATION</span>
+                <div class="stat-icon-wrap icon-cyan">🛡️</div>
+              </div>
+              <div class="stat-value" id="metric-quotes">100%</div>
+              <div class="stat-footer"><span class="stat-trend-up">Verbatim match & offset grounding</span></div>
+            </div>
+
+            <div class="stat-card" data-metric="radar" style="cursor: pointer;">
+              <div class="stat-card-header">
+                <span class="stat-label">RADAR PRECISION</span>
+                <div class="stat-icon-wrap icon-purple">🛰️</div>
+              </div>
+              <div class="stat-value" id="metric-radar">100%</div>
+              <div class="stat-footer"><span class="stat-trend-up">Zero false positive regression alarms</span></div>
+            </div>
+          </div>
+
+          <div class="card-panel">
+            <div class="card-panel-header">
+              <h3 class="panel-title" id="eval-table-heading">Curated Architectural Benchmarks</h3>
+              <span class="badge-status accepted" id="eval-table-filter-badge" style="cursor: pointer;">5/5 Verified</span>
+            </div>
+
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead id="evaluation-table-head">
+                  <tr>
+                    <th>Benchmark Case</th>
+                    <th>Source Domain</th>
+                    <th>Accepted Outcome</th>
+                    <th>Target Rejected Alternatives</th>
+                    <th>Evidence Verification</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="evaluation-table-body">
+                  <tr>
+                    <td><strong>K8s: Cgroups v2 PSI Eviction</strong></td>
+                    <td><a href="https://github.com/kubernetes/kubernetes/pull/112948" target="_blank" class="repo-pill-code">kubernetes#112948 ↗</a></td>
+                    <td><span class="badge-status accepted">PSI Grace Period</span></td>
+                    <td><span class="badge-status rejected">Static 10% Headroom</span> <span class="badge-status rejected">systemd-oomd</span></td>
+                    <td>✅ 2 Quotes Verified (100%)</td>
+                    <td><span class="badge-status accepted">PASS</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>uv: Config Format Selection</strong></td>
+                    <td><a href="https://github.com/astral-sh/uv/issues/1042" target="_blank" class="repo-pill-code">astral-sh/uv#1042 ↗</a></td>
+                    <td><span class="badge-status accepted">TOML</span></td>
+                    <td><span class="badge-status rejected">YAML (CVEs/Norway)</span> <span class="badge-status rejected">JSON (No comments)</span></td>
+                    <td>✅ 3 Quotes Verified (100%)</td>
+                    <td><span class="badge-status accepted">PASS</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Discourse: Edge Cache Storage</strong></td>
+                    <td><a href="https://meta.discourse.org/t/embedded-cache-storage-engine/88219" target="_blank" class="repo-pill-code">discourse#88219 ↗</a></td>
+                    <td><span class="badge-status accepted">SQLite WAL</span></td>
+                    <td><span class="badge-status rejected">RocksDB (85MB Bloat/ARM)</span></td>
+                    <td>✅ 2 Quotes Verified (100%)</td>
+                    <td><span class="badge-status accepted">PASS</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>httpx: Async Transport Layer</strong></td>
+                    <td><a href="https://github.com/encode/httpx/issues/780" target="_blank" class="repo-pill-code">encode/httpx#780 ↗</a></td>
+                    <td><span class="badge-status accepted">AnyIO Abstraction</span></td>
+                    <td><span class="badge-status rejected">Curio (Frozen maintenance)</span></td>
+                    <td>✅ 2 Quotes Verified (100%)</td>
+                    <td><span class="badge-status accepted">PASS</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Python: PEP 735 Groups</strong></td>
+                    <td><a href="https://discuss.python.org/t/pep-735-dependency-groups-in-pyproject-toml/42823" target="_blank" class="repo-pill-code">discuss.python.org#42823 ↗</a></td>
+                    <td><span class="badge-status accepted">pyproject.toml</span></td>
+                    <td><span class="badge-status rejected">External YAML Files</span></td>
+                    <td>✅ 1 Quote Verified (100%)</td>
+                    <td><span class="badge-status accepted">PASS</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= SCREEN 7: KNOWLEDGE SEARCH ================= -->
+        <section id="tab-search" class="tab-view">
+          <div class="page-title-row">
+            <div class="page-title-wrap">
+              <h1>Semantic Knowledge & AST Search</h1>
+              <p class="page-subtitle">Query historical engineering debates, rejected alternatives, and code justifications.</p>
+            </div>
+          </div>
+
+          <div class="analyze-input-card">
+            <div class="url-input-row">
+              <input type="text" id="search-query-input" class="url-text-input" style="padding-left: 1rem;" placeholder="Search across engineering memory (e.g., 'why was YAML rejected in uv?', 'RocksDB memory overhead')...">
+              <button class="btn-primary-emerald" id="btn-run-search">Search Memory</button>
+            </div>
+          </div>
+
+          <div id="search-results-container" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Dynamic search results -->
+          </div>
+        </section>
+
+        <!-- ================= SCREEN 8: SETTINGS ================= -->
+        <section id="tab-settings" class="tab-view">
+          <div class="page-title-row">
+            <div class="page-title-wrap">
+              <h1>Platform Settings & Model Configurations</h1>
+              <p class="page-subtitle">Configure Ollama open-weight inference pipeline, vector storage, and GitHub App integrations.</p>
+            </div>
+          </div>
+
+          <div class="card-panel">
+            <h3 class="panel-title">Multi-Stage Model Configuration</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0.5rem;">
+              <div style="background: #090e18; border: 1px solid var(--border-card); padding: 1rem; border-radius: var(--radius-sm);">
+                <div style="font-size: 0.7rem; color: var(--accent-emerald); font-weight: 700;">STAGE 1</div>
+                <div style="font-weight: 700; color: #ffffff; margin-top: 2px;">Llama 3.2-3B-Instruct</div>
+                <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">Discussion preprocessing & summarization</div>
+              </div>
+              <div style="background: #090e18; border: 1px solid var(--border-card); padding: 1rem; border-radius: var(--radius-sm);">
+                <div style="font-size: 0.7rem; color: var(--accent-amber); font-weight: 700;">STAGE 2</div>
+                <div style="font-weight: 700; color: #ffffff; margin-top: 2px;">Phi-3.5-mini-instruct</div>
+                <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">Argument mining & rejected alternative extraction</div>
+              </div>
+              <div style="background: #090e18; border: 1px solid var(--border-card); padding: 1rem; border-radius: var(--radius-sm);">
+                <div style="font-size: 0.7rem; color: var(--accent-cyan); font-weight: 700;">STAGE 3</div>
+                <div style="font-weight: 700; color: #ffffff; margin-top: 2px;">Qwen 2.5-Coder-7B-Instruct</div>
+                <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">Structured ADR synthesis & code AST grounding</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
