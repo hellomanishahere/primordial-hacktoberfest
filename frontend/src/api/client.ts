@@ -1,6 +1,7 @@
 /* ── Centralized API client for all Primordial backend endpoints ── */
 
 import type {
+  ADRRecord,
   DecisionDetail,
   DecisionListResponse,
   ExtractRequest,
@@ -63,7 +64,7 @@ export const fetchDecision = (id: string) =>
   request<DecisionDetail>(`/api/v1/decisions/${encodeURIComponent(id)}`);
 
 export const fetchDecisionADR = (id: string) =>
-  request<{ adr_id: string; title: string; markdown: string; status: string }>(
+  request<ADRRecord>(
     `/api/v1/decisions/${encodeURIComponent(id)}/adr`,
   );
 

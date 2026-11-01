@@ -37,13 +37,19 @@ def create_application() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
-    # Configure CORS
+    # The API is local-first and the UI does not use cookie authentication.
+    # Keep origins explicit and credential sharing disabled.
+    allowed_origins = [
+        origin.strip().rstrip("/")
+        for origin in settings.CORS_ALLOWED_ORIGINS.split(",")
+        if origin.strip()
+    ]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=allowed_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type"],
     )
 
     # Global Exception Handlers

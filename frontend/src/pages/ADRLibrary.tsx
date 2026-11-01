@@ -55,7 +55,7 @@ export default function ADRLibrary() {
           {decisions.map((d) => (
             <Link
               key={d.decision_id}
-              to={`/decisions/${encodeURIComponent(d.decision_id)}`}
+              to={`/decisions/${encodeURIComponent(d.decision_id)}/adr`}
               className="card group space-y-3 hover:border-cyan-500/40 transition-colors"
             >
               <div className="flex items-center gap-2 text-cyan-400">

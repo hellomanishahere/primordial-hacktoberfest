@@ -1,6 +1,6 @@
 # Primordial Examples
 
-This directory contains representative example artifacts produced by Primordial:
+`ADR-0001-adopt-undici-for-fetch.md` is a source-audited reference draft based on the public discussion at <https://github.com/nodejs/node/pull/41749>. It is **not a captured output from a run of the current application**. It intentionally records no rejected alternative because the source evidence previously included in this example could not be verified.
 
-- `ADR-0001-adopt-undici-for-fetch.md`: A representative Architecture Decision Record generated in Markdown Architectural Decision Record (MADR 3.0.0) format, compiled from GitHub Pull Request [nodejs/node#41749](https://github.com/nodejs/node/pull/41749) (Adopt Undici for Fetch API). It shows verified decision drivers, considered alternatives, negative consequences, architectural trade-offs, and authentic comment citations.
+Before using this directory as the hackathon demonstration, add a real discussion input and output captured from a local Ollama run. For the required evaluation, provide the Python discussion without the corresponding PEP, then compare the captured result against a separate gold answer. Do not provide the PEP text to the model.
 

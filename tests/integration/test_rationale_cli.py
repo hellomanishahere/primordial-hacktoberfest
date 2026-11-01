@@ -345,12 +345,13 @@ def test_cli_existing_commands_unaffected():
     """Verify that fetch, preprocess, detect, and extract-rationale all appear in CLI help."""
     import subprocess
     import sys
+    from pathlib import Path
 
     result = subprocess.run(
         [sys.executable, "backend/app/cli.py", "--help"],
         capture_output=True,
         text=True,
-        cwd="/Users/princechhikara/Desktop/primordial-hacktoberfest",
+        cwd=Path(__file__).resolve().parents[2],
     )
     assert result.returncode == 0
     assert "fetch" in result.stdout

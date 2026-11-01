@@ -10,18 +10,9 @@
 
 Primordial is an open-source, local-first platform that extracts, verifies, and compiles historical architectural decisions from complex GitHub discussions (Issues, Pull Requests, Code Reviews) into verifiable Architectural Decision Records ([MADR 3.0.0](https://adr.github.io/madr/)).
 
-### Implementation Roadmap
-1. **Module 1: Project Setup and Backend Foundation** *(Completed)*
-2. **Module 2: GitHub Integration** *(Completed)*
-3. **Module 3: Data Preprocessing** *(Completed)*
-4. **Module 4: AI Decision Detection** *(Completed)*
-5. **Module 5: Rationale and Evidence Extraction** *(Completed)*
-6. **Module 6: Evidence Verification** *(Completed)*
-7. **Module 7: ADR/MADR Generation** *(Completed)*
-8. **Module 8: Storage and Search** *(Completed)*
-9. **Module 9: Historical PR Radar** *(Completed)*
-10. **Module 10: Frontend Development** *(Completed)*
-11. **Module 11: Integration and Testing**
+### Current implementation
+
+The repository contains a working prototype for GitHub discussion ingestion, preprocessing, local-model decision and rationale extraction, evidence checks, ADR generation, storage/search, and PR matching. These modules have unit and integration tests, but the required Python PEP evaluation has not yet been completed. Cross-platform contributor identity and robust source-code tracking across file moves are not implemented.
 
 ---
 
@@ -85,11 +76,10 @@ primordial-hacktoberfest/
 - Python 3.11+
 - Git
 
-### 1. Clone & Checkout Branch
+### 1. Clone the repository
 ```bash
 git clone https://github.com/princechhikara/primordial-hacktoberfest.git
 cd primordial-hacktoberfest
-git checkout feature/backend-foundation
 ```
 
 ### 2. Set Up Python Virtual Environment
@@ -116,6 +106,8 @@ cp backend/.env.example backend/.env
 # Optional: also copy to root if running commands from repository root
 cp .env.example .env
 ```
+
+The API binds to `127.0.0.1` by default and only allows the local Vite development origins listed in `CORS_ALLOWED_ORIGINS`. Keep personal tokens in `.env`; never include `.env` in a shared archive or commit it to Git.
 
 ---
 
@@ -279,13 +271,13 @@ The `extract-rationale` command runs the full pipeline (fetch → preprocess →
 
 All extracted claims cite real comment IDs from the original discussion. Fields without grounded evidence are explicitly marked `"evidence_status": "insufficient_evidence"` rather than silently omitted or invented.
 
-### Ollama Model Setup for Decision Detection
+### Ollama Model Setup
 To run local decision detection:
 ```bash
 # 1. Install & start Ollama
 ollama serve
 
-# 2. Pull the primary open-weight model
+# 2. Pull the model currently used for decision detection and rationale extraction
 ollama pull qwen2.5:7b
 ```
 

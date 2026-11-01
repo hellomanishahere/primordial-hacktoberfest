@@ -23,13 +23,11 @@ class OllamaModelClient:
         self,
         base_url: Optional[str] = None,
         default_model: Optional[str] = None,
-        fallback_model: Optional[str] = None,
         timeout_seconds: Optional[float] = None,
         http_client: Optional[httpx.AsyncClient] = None,
     ) -> None:
         self.base_url = (base_url or settings.OLLAMA_BASE_URL).rstrip("/")
         self.default_model = default_model or settings.AI_MODEL_PRIMARY
-        self.fallback_model = fallback_model or settings.AI_MODEL_FALLBACK
         self.timeout_seconds = (
             timeout_seconds
             if timeout_seconds is not None

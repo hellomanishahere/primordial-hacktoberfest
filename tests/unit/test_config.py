@@ -8,12 +8,12 @@ def test_default_settings():
     assert settings.APP_NAME == "Primordial"
     assert settings.APP_ENV in ["development", "test", "production"]
     assert settings.APP_PORT == 8000
-    assert settings.APP_HOST == "0.0.0.0"
+    assert settings.APP_HOST == "127.0.0.1"
+    assert settings.CORS_ALLOWED_ORIGINS == "http://localhost:5173,http://127.0.0.1:5173"
     assert settings.API_V1_PREFIX == "/api/v1"
     assert settings.VERSION == "0.1.0"
     assert settings.OLLAMA_BASE_URL == "http://localhost:11434"
     assert settings.AI_MODEL_PRIMARY == "qwen2.5:7b"
-    assert settings.AI_MODEL_FALLBACK == "llama3.1:8b"
     assert settings.AI_TIMEOUT_SECONDS == 90
     assert settings.ENABLE_WAL_MODE is True
 

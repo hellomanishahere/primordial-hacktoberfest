@@ -80,12 +80,12 @@ class TestCORS:
         )
         assert "access-control-allow-origin" in res.headers
 
-    def test_cors_allows_any_origin(self, client):
+    def test_cors_rejects_unconfigured_origin(self, client):
         res = client.get(
             "/api/v1/health",
             headers={"Origin": "http://example.com"},
         )
-        assert res.headers.get("access-control-allow-origin") in ("*", "http://example.com")
+        assert "access-control-allow-origin" not in res.headers
 
 
 # ── 3. Overview (empty DB) ──────────────────────────────────────────────────
@@ -269,7 +269,7 @@ class TestFrontendBuild:
         pages_dir = os.path.join(self.FRONTEND_DIR, "src", "pages")
         expected = [
             "Overview.tsx", "AnalyzeDiscussion.tsx", "Decisions.tsx",
-            "DecisionDetail.tsx", "ADRLibrary.tsx", "Search.tsx",
+            "DecisionDetail.tsx", "ADRLibrary.tsx", "ADRView.tsx", "Search.tsx",
             "PRRadar.tsx", "Settings.tsx",
         ]
         for page in expected:
