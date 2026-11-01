@@ -3,6 +3,13 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 
+def display_model_name(adapter: "BaseInferenceAdapter", configured_name: str) -> str:
+    """Return the actual inference mode instead of presenting fallback code as a model."""
+    if adapter.__class__.__name__ == "HeuristicFallbackAdapter":
+        return "Heuristic fallback (no model inference)"
+    return configured_name
+
+
 class BaseInferenceAdapter(ABC):
     """Abstract interface for model execution adapters."""
 

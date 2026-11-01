@@ -6,7 +6,7 @@ import re
 import time
 from typing import Any, Dict, List
 
-from primordial.ai.adapters.base import BaseInferenceAdapter
+from primordial.ai.adapters.base import BaseInferenceAdapter, display_model_name
 from primordial.ai.stages.stage1_preprocess import format_discussion_thread, parse_json_from_response
 from primordial.models import Discussion, PipelineStageResult, RejectedAlternative
 
@@ -83,7 +83,7 @@ Respond strictly with valid JSON.
     return PipelineStageResult(
         stage_num=2,
         stage_name="Argument Mining & Rejected Alternatives Analysis",
-        model_name="Phi-3.5-mini-instruct",
+        model_name=display_model_name(adapter, "Phi-3.5-mini-instruct"),
         execution_time_ms=round(elapsed_ms, 2),
         output=output_data,
         raw_response=raw_response,

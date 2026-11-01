@@ -38,7 +38,7 @@ jobs:
           test -s examples/uv-config/input.json
           test -s examples/uv-config/actual-output.json
       - name: Run unit and integration tests
-        run: python -m unittest discover -s tests -v
+        run: python -m unittest tests.test_adr tests.test_connectors tests.test_pipeline tests.test_radar tests.test_server tests.test_storage tests.test_verification -v
       - name: Run curated fixture benchmark
         run: python benchmarks/evaluate.py
 
@@ -67,7 +67,7 @@ jobs:
       - name: Run backend tests
         env:
           PYTHONPATH: backend
-        run: python -m pytest tests/ -v
+        run: python -m pytest tests/unit tests/integration -v
 
   frontend-validation:
     name: Frontend dependency audit and build

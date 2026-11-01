@@ -135,36 +135,4 @@ class DiscourseConnector(BaseConnector):
             )
 
         except Exception as e:
-            # Fallback to nearest discourse fixture
-            fallback = get_sample_discussion_by_url(domain) or get_sample_discussion_by_url("discuss.python.org")
-            if fallback:
-                return fallback
-
-            # Graceful synthetic discussion
-            return Discussion(
-                id=disc_id,
-                source_type="discourse",
-                source_url=canonical_url,
-                title=f"Architecture RFC: {domain} topic #{topic_id}",
-                description=f"Community technical debate regarding system architecture on {domain}.",
-                author="maintainer",
-                created_at="2024-01-18T10:00:00Z",
-                labels=["architecture", "rfc"],
-                comments=[
-                    Comment(
-                        id=f"dc-p-{topic_id}-1",
-                        author="contributor-dan",
-                        created_at="2024-01-18T11:00:00Z",
-                        body="Proposing alternative approach for system architecture.",
-                        url=f"{canonical_url}/1",
-                    ),
-                    Comment(
-                        id=f"dc-p-{topic_id}-2",
-                        author="core-maintainer",
-                        created_at="2024-01-18T14:00:00Z",
-                        body="Alternative approach has high binary overhead and packaging friction. We agree to adopt the lightweight standard.",
-                        url=f"{canonical_url}/2",
-                    ),
-                ],
-                metadata={"domain": domain, "topic_id": topic_id, "slug": slug, "offline_mode": True},
-            )
+            raise RuntimeError(f"Could not fetch Discourse discussion: {source_url}") from e

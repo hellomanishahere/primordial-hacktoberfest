@@ -6,7 +6,7 @@ import re
 import time
 from typing import Any, Dict, List, Tuple
 
-from primordial.ai.adapters.base import BaseInferenceAdapter
+from primordial.ai.adapters.base import BaseInferenceAdapter, display_model_name
 from primordial.models import Discussion, PipelineStageResult
 
 
@@ -108,7 +108,7 @@ Respond ONLY with valid JSON.
     return PipelineStageResult(
         stage_num=1,
         stage_name="Discussion Preprocessing & Summarization",
-        model_name="Llama 3.2-3B-Instruct",
+        model_name=display_model_name(adapter, "Llama 3.2-3B-Instruct"),
         execution_time_ms=round(elapsed_ms, 2),
         output=output_data,
         raw_response=raw_response,
