@@ -86,19 +86,33 @@ Benchmark scores are fixture match rates only. The fixtures and heuristic fallba
 | `POST` | `/api/radar/scan` | Compare a proposed change with saved decisions |
 | `GET` | `/api/benchmark/evaluate` | Run the curated fixture benchmark |
 
-## Project structure
+## Project Structure
 
-```text
-primordial/       Python application package
-  ai/             Ollama and heuristic inference adapters and pipeline
-  connectors/     GitHub, Discourse, and curated discussion fixtures
-  frontend/       Dashboard served by the Python server
-  storage/        SQLite persistence layer
-  verification/   Evidence quote checks
-tests/            Unit and integration tests
-benchmarks/       Curated fixture benchmark
-examples/         Sample input and actual application output
-HACKATHON.md      Team, problem statement, and model disclosure
+```
+primordial/
+├── benchmarks/
+│   └── evaluate.py            # Automated PS06 benchmark evaluation
+├── primordial/
+│   ├── adr/
+│   │   └── generator.py       # MADR 3.0.0 and markdown generator
+│   ├── ai/
+│   │   ├── adapters/          # Ollama and deterministic heuristic adapters
+│   │   ├── stages/            # Stage 1 (Llama 3.2), Stage 2 (Phi-3.5), Stage 3 (Qwen)
+│   │   └── pipeline.py        # 3-Stage orchestrator
+│   ├── connectors/            # GitHub, Discourse, and Benchmark dataset loaders
+│   ├── frontend/              # Glassmorphic single-page web application
+│   ├── models.py              # Typed data models
+│   ├── radar/
+│   │   └── pr_scanner.py      # PR Historical Decision Radar engine
+│   ├── server/
+│   │   └── app.py             # REST API server
+│   ├── storage/
+│   │   └── db.py              # SQLite storage layer
+│   └── verification/
+│       └── evidence.py        # Evidence quote verification engine
+├── tests/                     # 24 unit and integration tests
+├── HACKATHON.md               # Hacktoberfest 2026 submission & pitch document
+└── pyproject.toml             # Project configuration
 ```
 
 ## License
