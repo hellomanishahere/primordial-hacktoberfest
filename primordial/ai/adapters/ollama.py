@@ -9,8 +9,6 @@ from typing import Any, Dict, List, Optional
 
 from primordial.ai.adapters.base import BaseInferenceAdapter
 
-MAX_RESPONSE_BYTES = 2_000_000
-
 
 class OllamaAdapter(BaseInferenceAdapter):
     """Adapter for running open-weight models locally via Ollama."""
@@ -33,13 +31,7 @@ class OllamaAdapter(BaseInferenceAdapter):
 
         req = urllib.request.Request(url, data=req_data, headers=headers, method="POST" if data else "GET")
         with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-            content_length = resp.headers.get("Content-Length")
-            if content_length and int(content_length) > MAX_RESPONSE_BYTES:
-                raise ValueError("Ollama response exceeds the 2 MB limit")
-            body = resp.read(MAX_RESPONSE_BYTES + 1)
-            if len(body) > MAX_RESPONSE_BYTES:
-                raise ValueError("Ollama response exceeds the 2 MB limit")
-            return json.loads(body.decode("utf-8"))
+            return json.loads(resp.read().decode("utf-8"))
 
     def is_available(self) -> bool:
         """Check if local Ollama daemon is active and responding."""
