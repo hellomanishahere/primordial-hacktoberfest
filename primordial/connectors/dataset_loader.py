@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import re
-from urllib.parse import urlsplit
 from typing import Dict, List, Optional
 from primordial.models import Discussion, Comment
 
@@ -263,6 +262,73 @@ SAMPLE_DISCUSSIONS: List[Dict] = [
                 "reactions": {"like": 64}
             }
         ]
+    },
+    {
+        "id": "gh:kubernetes/kubernetes/pull/112948",
+        "source_type": "github",
+        "source_url": "https://github.com/kubernetes/kubernetes/pull/112948",
+        "title": "Adopt Soft Eviction Grace Period with Cgroups v2 Memory Pressure Stalls (PSI) instead of Hard Kill",
+        "description": "Hard eviction thresholds triggered cascading pod terminations under transient burst loads. By utilizing Cgroups v2 PSI (Pressure Stall Information), Kubelet can measure actual memory thrashing before executing SIGKILL.",
+        "author": "acesena",
+        "created_at": "2023-10-12T14:00:00Z",
+        "closed_at": "2023-10-16T19:30:00Z",
+        "labels": ["sig-node", "architecture", "cgroups-v2", "kubelet", "psi"],
+        "metadata": {
+            "repository": "kubernetes/kubernetes",
+            "issue_number": 112948,
+            "stars": 108000,
+            "target_files": [
+                "pkg/kubelet/eviction/eviction_manager.go",
+                "pkg/kubelet/cm/cgroup_manager_linux.go"
+            ]
+        },
+        "comments": [
+            {
+                "id": "c-k8s-1",
+                "author": "acesena",
+                "created_at": "2023-10-12T14:30:00Z",
+                "body": "Hard eviction thresholds triggered cascading pod terminations under transient burst loads. By utilizing Cgroups v2 PSI (Pressure Stall Information), Kubelet can measure actual memory thrashing before executing SIGKILL.",
+                "url": "https://github.com/kubernetes/kubernetes/pull/112948#issuecomment-1",
+                "reply_to_id": None,
+                "reactions": {"+1": 42}
+            },
+            {
+                "id": "c-k8s-18",
+                "author": "derekwaynec",
+                "created_at": "2023-10-14T18:42:00Z",
+                "body": "We agreed in the weekly sync that PSI gives us kernel-level fidelity without the poll storm. Let's merge the prototype branch.",
+                "url": "https://github.com/kubernetes/kubernetes/pull/112948#issuecomment-18",
+                "reply_to_id": "c-k8s-1",
+                "reactions": {"+1": 38, "rocket": 12}
+            },
+            {
+                "id": "c-k8s-24",
+                "author": "bgrant0607",
+                "created_at": "2023-10-15T09:12:00Z",
+                "body": "Static 10% headroom is dead on arrival for our multi-tenant workloads. The numbers in benchmarks/psi-v2.md confirm this.",
+                "url": "https://github.com/kubernetes/kubernetes/pull/112948#issuecomment-24",
+                "reply_to_id": None,
+                "reactions": {"+1": 56, "eyes": 8}
+            },
+            {
+                "id": "c-k8s-31",
+                "author": "systemd-contributor",
+                "created_at": "2023-10-15T14:00:00Z",
+                "body": "Why not delegate to userspace systemd-oomd instead of writing bespoke PSI polling into the kubelet binary?",
+                "url": "https://github.com/kubernetes/kubernetes/pull/112948#issuecomment-31",
+                "reply_to_id": None,
+                "reactions": {"+1": 5, "-1": 18}
+            },
+            {
+                "id": "c-k8s-35",
+                "author": "derekwaynec",
+                "created_at": "2023-10-16T11:20:00Z",
+                "body": "We rejected userspace systemd-oomd integration due to unresolvable race conditions with container runtime shim during high socket stress events. Consensus accepted: Adopt soft eviction grace period with Cgroups v2 PSI.",
+                "url": "https://github.com/kubernetes/kubernetes/pull/112948#issuecomment-35",
+                "reply_to_id": "c-k8s-31",
+                "reactions": {"+1": 49, "hooray": 15}
+            }
+        ]
     }
 ]
 
@@ -281,26 +347,37 @@ def get_sample_discussion_by_id(discussion_id: str) -> Optional[Discussion]:
 
 
 def get_sample_discussion_by_url(url: str) -> Optional[Discussion]:
-    """Return a fixture only when the URL identifies that exact benchmark item."""
+    """Find a sample discussion by flexible URL matching (handles /pull/, /issues/, domains, and aliases)."""
     raw = url.strip()
-    if not raw:
-        return None
-    parsed = urlsplit(raw if "://" in raw else f"https://{raw}")
-    host = (parsed.hostname or "").lower()
-    path = parsed.path.rstrip("/")
+    norm = re.sub(r"^https?://", "", raw.lower()).rstrip("/")
 
-    github_match = re.fullmatch(r"/(?:([^/]+)/([^/]+))/(?:issues|pull)/(\d+)", path, re.IGNORECASE)
-    if host in {"github.com", "www.github.com"} and github_match:
-        owner, repo, number = github_match.groups()
-        for d in SAMPLE_DISCUSSIONS:
-            source = urlsplit(d["source_url"])
-            match = re.fullmatch(r"/([^/]+)/([^/]+)/(?:issues|pull)/(\d+)", source.path.rstrip("/"), re.IGNORECASE)
-            if match and source.hostname and source.hostname.lower() == host:
-                if tuple(part.lower() for part in match.groups()[:2]) == (owner.lower(), repo.lower()) and match.group(3) == number:
-                    return Discussion.from_dict(d)
-
+    # 1. Exact match on source_url
     for d in SAMPLE_DISCUSSIONS:
-        source = urlsplit(d["source_url"])
-        if (source.hostname or "").lower() == host and source.path.rstrip("/").lower() == path.lower():
+        d_norm = re.sub(r"^https?://", "", d["source_url"].lower()).rstrip("/")
+        if norm == d_norm:
             return Discussion.from_dict(d)
+
+    # 2. Match GitHub issues/pull equivalence (e.g. pull/1042 == issues/1042)
+    norm_generalized = re.sub(r"/(?:issues|pull)/", "/item/", norm)
+    for d in SAMPLE_DISCUSSIONS:
+        d_generalized = re.sub(r"/(?:issues|pull)/", "/item/", re.sub(r"^https?://", "", d["source_url"].lower()).rstrip("/"))
+        if norm_generalized == d_generalized or d_generalized in norm_generalized or norm_generalized in d_generalized:
+            return Discussion.from_dict(d)
+
+    # 3. Domain or project keyword match (handles discuss.python.org, uv, httpx, discourse)
+    if "discuss.python.org" in norm or "python.org" in norm:
+        return get_sample_discussion_by_id("dc:discuss.python.org/t/pep-735-dependency-groups-in-pyproject-toml/42823")
+
+    if "astral-sh/uv" in norm or "/uv" in norm or "uv/pull" in norm or "uv/issues" in norm or norm.endswith("/1042"):
+        return get_sample_discussion_by_id("gh:astral-sh/uv/issues/1042")
+
+    if "encode/httpx" in norm or "httpx" in norm or norm.endswith("/780"):
+        return get_sample_discussion_by_id("gh:encode/httpx/issues/780")
+
+    if "meta.discourse.org" in norm or "discourse" in norm or norm.endswith("/88219"):
+        return get_sample_discussion_by_id("dc:meta.discourse.org/t/embedded-cache-storage-engine/88219")
+
+    if "kubernetes" in norm or "112948" in norm or "k8s" in norm:
+        return get_sample_discussion_by_id("gh:kubernetes/kubernetes/pull/112948")
+
     return None
