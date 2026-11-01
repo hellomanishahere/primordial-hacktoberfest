@@ -269,7 +269,7 @@ class TestFrontendBuild:
         pages_dir = os.path.join(self.FRONTEND_DIR, "src", "pages")
         expected = [
             "Overview.tsx", "AnalyzeDiscussion.tsx", "Decisions.tsx",
-            "DecisionDetail.tsx", "ADRLibrary.tsx", "Search.tsx",
+            "DecisionDetail.tsx", "ADRLibrary.tsx", "ADRView.tsx", "Search.tsx",
             "PRRadar.tsx", "Settings.tsx",
         ]
         for page in expected:

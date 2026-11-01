@@ -101,8 +101,26 @@ export interface VerificationInfo {
 export interface ADRInfo {
   adr_id: string;
   title: string;
-  markdown: string;
+  markdown?: string;
+  markdown_content?: string;
   status: string;
+}
+
+export interface ADRRecord {
+  adr_id: string;
+  decision_id: string;
+  discussion_id: string;
+  title: string;
+  status: string;
+  date?: string;
+  context?: string;
+  problem_statement?: string;
+  decision: string;
+  file_slug: string;
+  markdown_content: string;
+  json_content?: string;
+  markdown?: string;
+  created_at?: string;
 }
 
 /* Search (GET /api/v1/decisions?query=...) */
