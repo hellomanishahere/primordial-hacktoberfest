@@ -10,12 +10,15 @@ class Settings(BaseSettings):
     # Application Configuration
     APP_NAME: str = "Primordial"
     APP_ENV: str = "development"
-    APP_HOST: str = "0.0.0.0"
+    APP_HOST: str = "127.0.0.1"
     APP_PORT: int = 8000
     API_V1_PREFIX: str = "/api/v1"
     VERSION: str = "0.1.0"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
+
+    # CORS Configuration
+    CORS_ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
 
     # GitHub API Configuration (Read-only token; increases limit to 5,000 req/hr)
     GITHUB_TOKEN: Optional[str] = None

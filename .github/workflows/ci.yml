@@ -4,15 +4,29 @@ on:
   push:
     branches: [ main, feature/* ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, feature/* ]
 
 jobs:
+  security-audit:
+    name: Security & Secret Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Audit for uncommitted or exposed secrets
+        run: |
+          echo "Scanning tracked files for accidentally committed credentials..."
+          ! git grep -iE 'github_pat_[0-9a-zA-Z_]{30,}|ghp_[0-9a-zA-Z]{36}' -- ':!.github/workflows/ci.yml' || (echo "ERROR: GitHub token found in repository!" && exit 1)
+          ! git ls-files | grep -iE '\.env$|\.db$' || (echo "ERROR: Tracked .env or database files found!" && exit 1)
+
   backend-test:
-    name: Backend Tests (Python 3.11 - 3.13)
+    name: Backend Tests (Python ${{ matrix.python-version }})
+    needs: security-audit
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - name: Checkout code
@@ -28,15 +42,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
 
-      - name: Dependency check
+      - name: Dependency integrity check
         run: pip check
 
-      - name: Run Pytest suite
+      - name: Run Pytest test suite
         run: |
           PYTHONPATH=backend pytest tests/ -v
 
   frontend-test:
-    name: Frontend Build & Typecheck
+    name: Frontend Build & Typecheck (Node.js 20.x)
+    needs: security-audit
     runs-on: ubuntu-latest
 
     steps:
@@ -55,7 +70,7 @@ jobs:
           cd frontend
           npm ci
 
-      - name: Type check
+      - name: TypeScript type check
         run: |
           cd frontend
           npx tsc -b

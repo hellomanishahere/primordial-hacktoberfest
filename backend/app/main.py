@@ -37,12 +37,15 @@ def create_application() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
-    # Configure CORS
+    # Configure CORS: restrictive origins parsed from environment configuration
+    origins = [orig.strip() for orig in settings.CORS_ALLOWED_ORIGINS.split(",") if orig.strip()]
+    allow_all = "*" in origins
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
+        allow_origins=origins if not allow_all else ["*"],
+        allow_credentials=not allow_all,  # Only allow credentials if origins are explicitly restricted
+        allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["*"],
     )
 

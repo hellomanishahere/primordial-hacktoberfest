@@ -78,14 +78,14 @@ class TestCORS:
                 "Access-Control-Request-Method": "GET",
             },
         )
-        assert "access-control-allow-origin" in res.headers
+        assert res.headers.get("access-control-allow-origin") == "http://localhost:5173"
 
-    def test_cors_allows_any_origin(self, client):
+    def test_cors_blocks_unauthorized_origin(self, client):
         res = client.get(
             "/api/v1/health",
-            headers={"Origin": "http://example.com"},
+            headers={"Origin": "http://evil-attacker.com"},
         )
-        assert res.headers.get("access-control-allow-origin") in ("*", "http://example.com")
+        assert res.headers.get("access-control-allow-origin") is None
 
 
 # ── 3. Overview (empty DB) ──────────────────────────────────────────────────
