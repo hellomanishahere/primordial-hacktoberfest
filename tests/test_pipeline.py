@@ -2,14 +2,13 @@
 import unittest
 
 from primordial.ai.pipeline import PrimordialDecisionPipeline
-from primordial.ai.adapters.heuristic import HeuristicFallbackAdapter
 from primordial.connectors.dataset_loader import get_sample_discussion_by_id
 
 
 class TestPipeline(unittest.TestCase):
 
     def setUp(self):
-        self.pipeline = PrimordialDecisionPipeline(adapter=HeuristicFallbackAdapter())
+        self.pipeline = PrimordialDecisionPipeline()
         self.discussion = get_sample_discussion_by_id("gh:astral-sh/uv/issues/1042")
 
     def test_pipeline_execution(self):
@@ -19,23 +18,25 @@ class TestPipeline(unittest.TestCase):
         # Check stages
         self.assertEqual(len(res.stages), 3)
 
-        # This unit test deliberately exercises the deterministic fallback.
+        # Stage 1: Llama 3.2-3B
         st1 = res.stages[0]
         self.assertEqual(st1.stage_num, 1)
-        self.assertEqual(st1.model_name, "Heuristic fallback (no model inference)")
+        self.assertEqual(st1.model_name, "Llama 3.2-3B-Instruct")
         self.assertIn("problem_statement", st1.output)
         self.assertIn("participants", st1.output)
 
+        # Stage 2: Phi-3.5-mini
         st2 = res.stages[1]
         self.assertEqual(st2.stage_num, 2)
-        self.assertEqual(st2.model_name, "Heuristic fallback (no model inference)")
+        self.assertEqual(st2.model_name, "Phi-3.5-mini-instruct")
         self.assertIn("proposals", st2.output)
         self.assertIn("rejected_alternatives", st2.output)
         self.assertGreater(len(st2.output["rejected_alternatives"]), 0)
 
+        # Stage 3: Qwen 2.5-Coder-7B
         st3 = res.stages[2]
         self.assertEqual(st3.stage_num, 3)
-        self.assertEqual(st3.model_name, "Heuristic fallback (no model inference)")
+        self.assertEqual(st3.model_name, "Qwen 2.5-Coder-7B-Instruct")
         self.assertIn("accepted_option", st3.output)
 
         # Final Decision Record
