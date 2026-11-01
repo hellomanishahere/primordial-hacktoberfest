@@ -44,19 +44,23 @@ def extract_next_page_url(link_header: Optional[str]) -> Optional[str]:
     return None
 
 
+_DEFAULT_TOKEN = object()
+
+
 class GitHubClient:
     """Async client for GitHub REST API v3."""
 
     def __init__(
         self,
         base_url: str = "https://api.github.com",
-        token: Optional[str] = None,
+        token: Any = _DEFAULT_TOKEN,
         timeout: float = 15.0,
         client: Optional[httpx.AsyncClient] = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         # Priority: explicit token argument > environment settings
-        self.token = token if token is not None else settings.GITHUB_TOKEN
+        # If token is explicitly None, authentication is omitted.
+        self.token = settings.GITHUB_TOKEN if token is _DEFAULT_TOKEN else token
         self.timeout = timeout
         self._external_client = client
         self._internal_client: Optional[httpx.AsyncClient] = None
