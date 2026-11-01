@@ -2,11 +2,9 @@ name: Primordial CI
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -14,24 +12,21 @@ permissions:
 
 jobs:
   application-validation:
-    name: Application Validation
+    name: Application validation (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-
     steps:
-      - name: Checkout repository
+      - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Install project
         run: python -m pip install -e .
-
       - name: Validate required files and example artifacts
         run: |
           test -f README.md
@@ -42,26 +37,81 @@ jobs:
           test -s examples/README.md
           test -s examples/uv-config/input.json
           test -s examples/uv-config/actual-output.json
-
       - name: Run unit and integration tests
-        run: python -m unittest discover -s tests -v
-
+        run: python -m unittest tests.test_adr tests.test_connectors tests.test_pipeline tests.test_radar tests.test_server tests.test_storage tests.test_verification -v
       - name: Run curated fixture benchmark
         run: python benchmarks/evaluate.py
 
-  security-audit:
-    name: Security Audit
+  backend-validation:
+    name: Backend tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt
+      - name: Check dependency consistency
+        run: python -m pip check
+      - name: Run backend tests
+        env:
+          PYTHONPATH: backend
+        run: python -m pytest tests/unit tests/integration -v
+
+  frontend-validation:
+    name: Frontend dependency audit and build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Audit frontend dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=moderate
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+  security-audit:
+    name: Security audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - name: Install security scanners and project
-        run: python -m pip install -e . bandit pip-audit
-      - name: Scan Python source for high-severity security issues
+      - name: Install main application and scanners
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . bandit pip-audit
+      - name: Scan main application source
         run: bandit -q -r primordial -lll
-      - name: Audit installed Python dependencies
+      - name: Audit main application dependencies
         run: pip-audit --local --strict
+      - name: Install backend dependencies
+        run: python -m pip install -r backend/requirements.txt
+      - name: Scan backend source
+        run: bandit -q -r backend/app -lll
+      - name: Audit backend dependencies
+        run: pip-audit --strict -r backend/requirements.txt

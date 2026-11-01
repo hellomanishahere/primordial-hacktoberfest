@@ -5,7 +5,7 @@ import json
 import time
 from typing import Any, Dict, List
 
-from primordial.ai.adapters.base import BaseInferenceAdapter
+from primordial.ai.adapters.base import BaseInferenceAdapter, display_model_name
 from primordial.ai.stages.stage1_preprocess import format_discussion_thread, parse_json_from_response
 from primordial.models import (
     DecisionRecord,
@@ -166,7 +166,7 @@ Respond strictly with valid JSON.
     stage3_res = PipelineStageResult(
         stage_num=3,
         stage_name="Decision Synthesis & Code Grounding",
-        model_name="Qwen 2.5-Coder-7B-Instruct",
+        model_name=display_model_name(adapter, "Qwen 2.5-Coder-7B-Instruct"),
         execution_time_ms=round(elapsed_ms, 2),
         output=output_data,
         raw_response=raw_response,

@@ -347,37 +347,19 @@ def get_sample_discussion_by_id(discussion_id: str) -> Optional[Discussion]:
 
 
 def get_sample_discussion_by_url(url: str) -> Optional[Discussion]:
-    """Find a sample discussion by flexible URL matching (handles /pull/, /issues/, domains, and aliases)."""
-    raw = url.strip()
-    norm = re.sub(r"^https?://", "", raw.lower()).rstrip("/")
+    """Find a fixture only when the URL identifies that exact discussion."""
+    norm = re.sub(r"^https?://", "", url.strip().lower()).rstrip("/")
+    norm = norm.split("#", 1)[0].split("?", 1)[0]
 
-    # 1. Exact match on source_url
-    for d in SAMPLE_DISCUSSIONS:
-        d_norm = re.sub(r"^https?://", "", d["source_url"].lower()).rstrip("/")
-        if norm == d_norm:
-            return Discussion.from_dict(d)
+    for discussion in SAMPLE_DISCUSSIONS:
+        source = re.sub(r"^https?://", "", discussion["source_url"].lower()).rstrip("/")
+        if norm == source:
+            return Discussion.from_dict(discussion)
 
-    # 2. Match GitHub issues/pull equivalence (e.g. pull/1042 == issues/1042)
-    norm_generalized = re.sub(r"/(?:issues|pull)/", "/item/", norm)
-    for d in SAMPLE_DISCUSSIONS:
-        d_generalized = re.sub(r"/(?:issues|pull)/", "/item/", re.sub(r"^https?://", "", d["source_url"].lower()).rstrip("/"))
-        if norm_generalized == d_generalized or d_generalized in norm_generalized or norm_generalized in d_generalized:
-            return Discussion.from_dict(d)
-
-    # 3. Domain or project keyword match (handles discuss.python.org, uv, httpx, discourse)
-    if "discuss.python.org" in norm or "python.org" in norm:
-        return get_sample_discussion_by_id("dc:discuss.python.org/t/pep-735-dependency-groups-in-pyproject-toml/42823")
-
-    if "astral-sh/uv" in norm or "/uv" in norm or "uv/pull" in norm or "uv/issues" in norm or norm.endswith("/1042"):
-        return get_sample_discussion_by_id("gh:astral-sh/uv/issues/1042")
-
-    if "encode/httpx" in norm or "httpx" in norm or norm.endswith("/780"):
-        return get_sample_discussion_by_id("gh:encode/httpx/issues/780")
-
-    if "meta.discourse.org" in norm or "discourse" in norm or norm.endswith("/88219"):
-        return get_sample_discussion_by_id("dc:meta.discourse.org/t/embedded-cache-storage-engine/88219")
-
-    if "kubernetes" in norm or "112948" in norm or "k8s" in norm:
-        return get_sample_discussion_by_id("gh:kubernetes/kubernetes/pull/112948")
-
+        # Accept GitHub's issue/pull URL aliases for the same exact repository
+        # and number, but never substring or project-name matches.
+        generalized = re.sub(r"/(?:issues|pull)/", "/item/", norm)
+        source_generalized = re.sub(r"/(?:issues|pull)/", "/item/", source)
+        if generalized == source_generalized:
+            return Discussion.from_dict(discussion)
     return None

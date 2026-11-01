@@ -1,5 +1,6 @@
-# Example output
+# Primordial Examples
 
-`uv-config/input.json` is a bundled sample discussion. `uv-config/actual-output.json` is the output returned by the current pipeline when run with `HeuristicFallbackAdapter`.
+`ADR-0001-adopt-undici-for-fetch.md` is a source-audited reference draft based on the public discussion at <https://github.com/nodejs/node/pull/41749>. It is **not a captured output from a run of the current application**. It intentionally records no rejected alternative because the source evidence previously included in this example could not be verified.
 
-This is a deterministic fixture demonstration, not output from an Ollama model and not a measure of performance on unseen discussions. The output includes a `runtime_mode` field so the execution path is explicit.
+Before using this directory as the hackathon demonstration, add a real discussion input and output captured from a local Ollama run. For the required evaluation, provide the Python discussion without the corresponding PEP, then compare the captured result against a separate gold answer. Do not provide the PEP text to the model.
+

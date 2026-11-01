@@ -1,48 +1,39 @@
-# Hacktoberfest 2026 — Project Submission
+# Hacktoberfest 2026 – Project Submission
 
-## Team
+## 1. Team Information
 
-- **Team:** Primordial
-- **Members:** Shaurya Negi, Prince Chhikara, Manisha Jain
-- **Event:** Hack Day Sonipat, Newton School of Technology, Rishihood University
+- **Team Name:** Primordial
+- **Team Members:**
+  1. **Shaurya Negi**
+  2. **Prince Chhikara**
+  3. **Manisha Jain**
 
-## Selected problem
+---
 
-**Problem 06: Open Source Decision Intelligence and Knowledge Recovery**
+## 2. Selected Problem Statement
 
-Important engineering decisions are often buried in issues, pull requests, review comments, and technical forums. Primordial is designed to recover accepted decisions, rejected alternatives, reasoning, and references to their original discussions. It also provides a decision library and a radar that compares proposed changes with saved decisions.
+### **Problem 06: Open Source Decision Intelligence and Knowledge Recovery**
+- **Category:** Knowledge Management | Developer Intelligence | Information Retrieval
 
-## Product implementation
+### Problem Context & Objectives
+Open-source software (OSS) repositories represent some of the most dynamic engineering ecosystems in the world. However, vital architectural and technical decisions—the *why* behind design trade-offs, rejected approaches, performance compromises, and structural pivots—frequently remain buried under hundreds of issue comments, fragmented pull request reviews, and disparate technical threads. When new contributors join or existing maintainers review new pull requests touching legacy subsystems, they often lack contextual visibility into historical debates, risking inadvertent regressions, re-proposing previously rejected designs, or repeating past architectural mistakes.
 
-The repository includes GitHub and Discourse connectors, a three-stage extraction pipeline, SQLite persistence, an evidence-checking layer, MADR generation, a web dashboard, and a historical decision radar. Bundled conversations are curated fixtures for development and demonstration; they are not live source data.
+**Primordial** is a prototype for recovering engineering decisions from project discussions. The current implementation:
+1. Fetches public GitHub issues and pull requests, including their discussion comments.
+2. Cleans and budgets discussion text before analysis.
+3. Uses a local Ollama model to detect candidate decisions and extract rationales and alternatives.
+4. Checks cited comment IDs and support signals, then generates schema-validated ADR documents.
+5. Keeps links to source discussions and comments. It does not yet provide robust line-level or symbol-level code references.
+6. Stores decisions for search and offers a prototype PR radar based on text matching.
 
-The connectors return an error when a live source cannot be fetched. They do not substitute an unrelated fixture or fabricate a discussion. An exact built-in sample can still be selected explicitly for a repeatable demonstration.
+The Python PEP evaluation, non-GitHub discussion ingestion, cross-platform contributor identity, and reliable code tracking across file moves remain unfinished.
 
-## Open-weight models and rationale
+---
 
-When Ollama is available with the required models installed, the application uses these local model tags:
+## 3. Model and Runtime
 
-| Stage | Model tag | Intended role |
-|---|---|---|
-| Discussion preprocessing | `llama3.2:3b` | Summarize context and identify discussion participants and topics |
-| Argument mining | `phi3.5:latest` | Identify proposals, objections, and rejected alternatives |
-| Decision synthesis | `qwen2.5-coder:7b` | Produce a structured decision record and MADR content |
+The current implementation uses **Qwen 2.5 7B** through a locally running Ollama service for decision detection and rationale extraction. The model is selected with `AI_MODEL_PRIMARY`; the default is `qwen2.5:7b`. The application does not call a cloud AI API.
 
-The models were selected for the pipeline’s separate summarization, argument-mining, and structured-synthesis tasks. Model-backed operation requires a local Ollama service and all three model tags; the health endpoint reports the active adapter and installed models.
+Preprocessing, evidence checks, schema validation, storage, and ADR formatting are implemented in Python. Evidence checks verify that cited comment IDs exist in the fetched discussion and apply deterministic support and contradiction rules. These checks do not prove that every interpretation is correct; maintainers should review the linked source comments.
 
-When Ollama is unavailable, the application can use a deterministic heuristic fallback. **That fallback is ordinary application code, not an AI model.** Fallback-generated examples or benchmark results must be labeled accordingly. The team must use the Ollama-backed mode when demonstrating model-driven core functionality.
-
-## Evaluation status
-
-The included benchmark checks a small set of curated fixtures against expected decision names, evidence flags, and radar scenarios. Because the heuristic fallback contains fixture-specific rules, benchmark scores are fixture match rates, not independent accuracy measurements or evidence of generalization to unseen discussions. The example output in `examples/` identifies the adapter mode that produced it.
-
-## Run the application
-
-From the repository root, install and start the project:
-
-```bash
-python -m pip install -e .
-python -m primordial.server.app
-```
-
-Open <http://localhost:8080>. For Ollama-backed execution, install Ollama and pull the model tags listed above. Setup, test, and benchmark commands are documented in `README.md`.
+The code does not currently implement separate Llama or Phi stages, a working fallback model, an offline AI engine, or robust line/symbol-level code grounding. The PR radar is a prototype matcher. The primary evaluation against Python PEP discussions without providing the corresponding PEP is still pending.

@@ -1,0 +1,5 @@
+{
+  "url": "https://github.com/nodejs/node/pull/41749",
+  "model": "qwen2.5:7b",
+  "note": "Representative public GitHub discussion URL. The linked reference ADR is source-audited, not a captured model output."
+}
