@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # Application Configuration
     APP_NAME: str = "Primordial"
     APP_ENV: str = "development"
-    APP_HOST: str = "127.0.0.1"
+    APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
     API_V1_PREFIX: str = "/api/v1"
     VERSION: str = "0.1.0"

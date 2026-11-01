@@ -318,8 +318,11 @@ class TestCLISubcommands:
 
     def test_cli_help_lists_all_subcommands(self):
         import subprocess
+        import sys
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
         out = subprocess.check_output(
-            [".venv/bin/python", "-m", "app.cli", "--help"],
+            [sys.executable, "-m", "app.cli", "--help"],
+            cwd=os.path.join(repo_root, "backend"),
             env={**os.environ, "PYTHONPATH": "backend"},
         ).decode()
         for cmd_name in self.EXPECTED_COMMANDS:

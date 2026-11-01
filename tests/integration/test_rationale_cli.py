@@ -343,14 +343,18 @@ async def test_cli_extract_rationale_no_decisions_clean_exit(
 # ==============================================================================
 def test_cli_existing_commands_unaffected():
     """Verify that fetch, preprocess, detect, and extract-rationale all appear in CLI help."""
+    import os
     import subprocess
     import sys
 
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
     result = subprocess.run(
-        [sys.executable, "backend/app/cli.py", "--help"],
+        [sys.executable, "-m", "app.cli", "--help"],
         capture_output=True,
         text=True,
-        cwd="/Users/princechhikara/Desktop/primordial-hacktoberfest",
+        cwd=repo_root,
+        env={**os.environ, "PYTHONPATH": os.path.join(repo_root, "backend")},
     )
     assert result.returncode == 0
     assert "fetch" in result.stdout
