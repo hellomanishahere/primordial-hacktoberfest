@@ -6,7 +6,6 @@ from typing import Optional
 
 from primordial.ai.adapters import get_inference_adapter
 from primordial.ai.adapters.base import BaseInferenceAdapter
-from primordial.ai.adapters.heuristic import HeuristicFallbackAdapter
 from primordial.ai.stages.stage1_preprocess import run_stage1_preprocess
 from primordial.ai.stages.stage2_arguments import run_stage2_arguments
 from primordial.ai.stages.stage3_decision import run_stage3_decision
@@ -51,12 +50,6 @@ class PrimordialDecisionPipeline:
             adapter=self.adapter,
             model_tag="qwen2.5-coder:7b",
         )
-
-        # Stage prompts describe the intended model roles. Make the actual
-        # runtime visible in saved records when deterministic fallback code ran.
-        if isinstance(self.adapter, HeuristicFallbackAdapter):
-            for stage in (stage1_result, stage2_result, stage3_result):
-                stage.model_name = "Heuristic fallback (no model inference)"
 
         # Run Evidence Verification & MADR generation
         from primordial.adr.generator import generate_madr
