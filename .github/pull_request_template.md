@@ -1,21 +1,52 @@
-# Pull Request
+## Description
 
-## What this PR does
+Briefly describe the intent and technical scope of this pull request.
 
-Describe the functionality, improvements, or fixes introduced by this pull request.
+---
 
-## Models the product uses in this PR
+## Associated Hackathon Problem Statement
 
-Mention the open-source or open-weight AI models used in this implementation.
+- **Problem:** Problem 06 – Open Source Decision Intelligence and Knowledge Recovery
+- **Team Name:** Primordial
+- **Repository:** primordial-hacktoberfest
 
-Example: gemma4:e4b via Ollama or none.
+---
 
-## AI coding assistants that helped write it
+## AI Models Utilized (if applicable)
 
-Mention the AI coding assistants used during development.
+Select the open-source models involved in this change:
+- [ ] **Qwen 2.5 7B** (Deliberation extraction, ADR synthesis, Code-to-decision grounding)
+- [ ] **Llama 3.2-3B-Instruct** (Discussion summarization, Noise pruning)
+- [ ] **Phi-3.5-mini-instruct** (Argumentation mining, Rejected alternatives analysis)
+- [ ] N/A (Infrastructure, documentation, or template changes)
 
-Example: GitHub Copilot, Cursor, Claude Code, or none.
+---
 
-## How we tested it
+## Type of Change
 
-Describe the tests performed and the expected results.
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] Refactor (code improvement with identical external behavior)
+- [ ] Documentation / Examples
+- [ ] CI/CD / Repository configuration
+
+---
+
+## Hacktoberfest 2026 Compliance Checklist
+
+- [ ] My code strictly adheres to Hacktoberfest 2026 repository requirements.
+- [ ] This PR contains **NO API keys, passwords, credentials, or proprietary tokens**.
+- [ ] All AI models referenced are 100% open-source with verifiable local execution capability (zero paid closed-source APIs).
+- [ ] Automated tests have been executed and pass locally.
+- [ ] The PR has been branched from and targets `main` without direct commits to `main`.
+- [ ] Code is modular, well-commented, and includes type safety.
+
+---
+
+## Verification & Testing
+
+Explain how the changes were tested (command output, screenshots, test cases):
+```bash
+PYTHONPATH=backend pytest tests/ -v
+cd frontend && npm run build
+```
