@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import ipaddress
 import mimetypes
 import os
 import sys
@@ -21,6 +22,13 @@ from primordial.storage.db import DecisionStorage
 FRONTEND_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend"
 )
+MAX_REQUEST_BODY_BYTES = 1_000_000
+REQUEST_SOCKET_TIMEOUT_SECONDS = 10
+LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+class RequestBodyTooLarge(ValueError):
+    """Raised when a client sends a request body above the configured limit."""
 
 
 class PrimordialAPIHandler(BaseHTTPRequestHandler):
@@ -29,6 +37,50 @@ class PrimordialAPIHandler(BaseHTTPRequestHandler):
     storage = DecisionStorage()
     radar = PRDecisionRadar(storage)
     pipeline = PrimordialDecisionPipeline()
+
+    def setup(self) -> None:
+        super().setup()
+        self.connection.settimeout(REQUEST_SOCKET_TIMEOUT_SECONDS)
+
+    def end_headers(self) -> None:
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        super().end_headers()
+
+    def _allow_local_request(self) -> bool:
+        """Reject requests using non-loopback Host headers and cross-origin writes."""
+        try:
+            client_ip = ipaddress.ip_address(self.client_address[0].split("%", 1)[0])
+        except ValueError:
+            client_ip = None
+        if client_ip is None or not client_ip.is_loopback:
+            self.send_error(403, "Primordial accepts local clients only")
+            return False
+
+        host_header = self.headers.get("Host", "")
+        try:
+            request_host = urllib.parse.urlsplit(f"//{host_header}").hostname
+        except ValueError:
+            request_host = None
+        if not request_host or request_host.lower() not in LOOPBACK_HOSTS:
+            self.send_error(421, "Primordial accepts loopback requests only")
+            return False
+
+        origin = self.headers.get("Origin")
+        if origin:
+            parsed_origin = urllib.parse.urlsplit(origin)
+            origin_host = (parsed_origin.hostname or "").lower()
+            # Require the exact local origin that served the app. This blocks
+            # browser pages on other sites from issuing state-changing requests.
+            if (
+                parsed_origin.scheme != "http"
+                or origin_host not in LOOPBACK_HOSTS
+                or parsed_origin.netloc.lower() != host_header.lower()
+            ):
+                self.send_error(403, "Cross-origin requests are not allowed")
+                return False
+        return True
 
     def _send_json(self, data: Any, status: int = 200) -> None:
         response_body = json.dumps(data, indent=2).encode("utf-8")
@@ -42,19 +94,33 @@ class PrimordialAPIHandler(BaseHTTPRequestHandler):
         self._send_json({"error": message, "status": status}, status=status)
 
     def _read_json_body(self) -> Dict[str, Any]:
-        content_length = int(self.headers.get("Content-Length", 0))
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Invalid Content-Length") from exc
+        if content_length < 0:
+            raise ValueError("Invalid Content-Length")
+        if content_length > MAX_REQUEST_BODY_BYTES:
+            raise RequestBodyTooLarge("Request body exceeds the 1 MB limit")
         if content_length == 0:
             return {}
         body = self.rfile.read(content_length).decode("utf-8")
-        return json.loads(body)
+        parsed = json.loads(body)
+        if not isinstance(parsed, dict):
+            raise ValueError("JSON request body must be an object")
+        return parsed
 
     def do_OPTIONS(self) -> None:
+        if not self._allow_local_request():
+            return
         # The dashboard is served from this origin, so cross-origin access is
         # neither required nor enabled.
         self.send_response(204)
         self.end_headers()
 
     def do_GET(self) -> None:
+        if not self._allow_local_request():
+            return
         parsed_url = urllib.parse.urlparse(self.path)
         path = parsed_url.path
         query = urllib.parse.parse_qs(parsed_url.query)
@@ -123,13 +189,19 @@ class PrimordialAPIHandler(BaseHTTPRequestHandler):
         self._serve_static(path)
 
     def do_POST(self) -> None:
+        if not self._allow_local_request():
+            return
         parsed_url = urllib.parse.urlparse(self.path)
         path = parsed_url.path
 
         try:
             body = self._read_json_body()
-        except Exception as e:
-            self._send_error_json(f"Malformed JSON: {e}", status=400)
+        except RequestBodyTooLarge:
+            self.close_connection = True
+            self._send_error_json("Request body exceeds the 1 MB limit", status=413)
+            return
+        except Exception:
+            self._send_error_json("Malformed JSON request body", status=400)
             return
 
         if path == "/api/discussions/fetch":
@@ -141,8 +213,8 @@ class PrimordialAPIHandler(BaseHTTPRequestHandler):
                 discussion = fetch_discussion_auto(url_or_id)
                 self.storage.save_discussion(discussion)
                 self._send_json(discussion.to_dict())
-            except Exception as e:
-                self._send_error_json(str(e), status=400)
+            except Exception:
+                self._send_error_json("Could not fetch that supported public discussion", status=400)
             return
 
         if path == "/api/pipeline/run":
@@ -172,8 +244,8 @@ class PrimordialAPIHandler(BaseHTTPRequestHandler):
                     self.storage.save_stage_log(discussion.id, stage)
 
                 self._send_json(result.to_dict())
-            except Exception as e:
-                self._send_error_json(f"Pipeline execution error: {e}", status=500)
+            except Exception:
+                self._send_error_json("Pipeline execution failed", status=500)
             return
 
         if path == "/api/decisions":
@@ -181,8 +253,8 @@ class PrimordialAPIHandler(BaseHTTPRequestHandler):
                 decision = DecisionRecord.from_dict(body)
                 self.storage.save_decision(decision)
                 self._send_json(decision.to_dict(), status=201)
-            except Exception as e:
-                self._send_error_json(f"Failed to save decision: {e}", status=400)
+            except Exception:
+                self._send_error_json("Decision record could not be saved", status=400)
             return
 
         if path == "/api/radar/scan":
@@ -202,8 +274,8 @@ class PrimordialAPIHandler(BaseHTTPRequestHandler):
                     "alerts_count": len(alerts),
                     "alerts": [a.to_dict() for a in alerts],
                 })
-            except Exception as e:
-                self._send_error_json(f"Radar scan error: {e}", status=500)
+            except Exception:
+                self._send_error_json("Radar scan failed", status=500)
             return
 
         self._send_error_json(f"Endpoint '{path}' not found", status=404)

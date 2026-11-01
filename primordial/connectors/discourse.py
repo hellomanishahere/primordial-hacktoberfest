@@ -2,15 +2,36 @@
 from __future__ import annotations
 
 import json
+import http.client
+import ipaddress
 import re
-import urllib.error
-import urllib.request
+import socket
+import ssl
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlsplit
 
 from primordial.connectors.base import BaseConnector
 from primordial.connectors.dataset_loader import get_sample_discussion_by_url
 from primordial.models import Comment, Discussion
+
+
+MAX_RESPONSE_BYTES = 2_000_000
+REQUEST_TIMEOUT_SECONDS = 10
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """Connect to a previously validated public IP while retaining TLS hostname checks."""
+
+    def __init__(self, hostname: str, address: str):
+        super().__init__(hostname, port=443, timeout=REQUEST_TIMEOUT_SECONDS,
+                         context=ssl.create_default_context())
+        self._resolved_address = address
+
+    def connect(self) -> None:
+        raw_socket = socket.create_connection(
+            (self._resolved_address, self.port), timeout=self.timeout
+        )
+        self.sock = self._context.wrap_socket(raw_socket, server_hostname=self.host)
 
 
 class DiscourseConnector(BaseConnector):
@@ -27,17 +48,26 @@ class DiscourseConnector(BaseConnector):
         self.api_username = api_username
 
     def can_handle(self, source_url: str) -> bool:
-        raw = source_url.strip()
-        parsed = urlsplit(raw if "://" in raw else f"https://{raw}")
-        if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.hostname.lower() in {"github.com", "www.github.com"}:
+        try:
+            self.parse_url(source_url)
+        except (TypeError, ValueError):
             return False
-        return bool(re.fullmatch(r"/t/(?:[a-zA-Z0-9_-]+/)?\d+/?", parsed.path))
+        return True
 
     def parse_url(self, source_url: str) -> Tuple[str, Optional[str], int]:
         raw = source_url.strip()
         parsed = urlsplit(raw if "://" in raw else f"https://{raw}")
         domain = parsed.hostname or ""
-        if parsed.scheme not in {"http", "https"} or not domain or domain.lower() in {"github.com", "www.github.com"}:
+        if (
+            parsed.scheme != "https"
+            or not domain
+            or parsed.username
+            or parsed.password
+            or parsed.port not in (None, 443)
+            or parsed.query
+            or parsed.fragment
+            or domain.lower() in {"github.com", "www.github.com"}
+        ):
             raise ValueError("Expected a public Discourse topic URL")
         match = re.fullmatch(r"/t/(?:([a-zA-Z0-9_-]+)/)?(\d+)/?", parsed.path)
         if not match:
@@ -53,7 +83,24 @@ class DiscourseConnector(BaseConnector):
         return clean
 
     def _make_request(self, domain: str, topic_id: int) -> Dict[str, Any]:
-        url = f"https://{domain}/t/{topic_id}.json"
+        try:
+            resolved = socket.getaddrinfo(
+                domain, 443, type=socket.SOCK_STREAM
+            )
+        except socket.gaierror as exc:
+            raise ValueError("Discussion host could not be resolved") from exc
+
+        addresses = list(dict.fromkeys(info[4][0] for info in resolved))
+        if not addresses:
+            raise ValueError("Discussion host has no reachable address")
+        for address in addresses:
+            try:
+                is_public = ipaddress.ip_address(address.split("%", 1)[0]).is_global
+            except ValueError:
+                is_public = False
+            if not is_public:
+                raise ValueError("Discussion host resolves to a non-public address")
+
         headers = {
             "Accept": "application/json",
             "User-Agent": "Primordial-Decision-Intelligence/1.0",
@@ -62,9 +109,20 @@ class DiscourseConnector(BaseConnector):
             headers["Api-Key"] = self.api_key
             headers["Api-Username"] = self.api_username
 
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=10) as response:
-            return json.loads(response.read().decode("utf-8"))
+        # Pin the connection to the address we validated so a DNS change between
+        # validation and connect cannot redirect this request to a private host.
+        with _PinnedHTTPSConnection(domain, addresses[0]) as connection:
+            connection.request("GET", f"/t/{topic_id}.json", headers=headers)
+            response = connection.getresponse()
+            if response.status != 200:
+                raise ValueError(f"Discussion host returned HTTP {response.status}")
+            content_length = response.getheader("Content-Length")
+            if content_length and int(content_length) > MAX_RESPONSE_BYTES:
+                raise ValueError("Discussion response exceeds the 2 MB limit")
+            body = response.read(MAX_RESPONSE_BYTES + 1)
+            if len(body) > MAX_RESPONSE_BYTES:
+                raise ValueError("Discussion response exceeds the 2 MB limit")
+            return json.loads(body.decode("utf-8"))
 
     def fetch_discussion(self, source_url: str) -> Discussion:
         # Check local sample fixture first

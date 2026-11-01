@@ -1713,7 +1713,7 @@ function displayDiscussion(disc) {
   document.getElementById("disc-messages-count").textContent = `${disc.comments ? disc.comments.length : 0} comments`;
 
   const link = document.getElementById("disc-url-link");
-  link.href = disc.source_url;
+  link.href = parseExternalUrl(disc.source_url) || "#";
   link.textContent = `${disc.source_type === "github" ? "GitHub" : "Discourse"} Thread ↗`;
 
   // Labels
@@ -1737,9 +1737,9 @@ function displayDiscussion(disc) {
     <div class="comment-header">
       <div class="author-wrap">
         <span class="badge badge-source">TOPIC OP</span>
-        <span class="author-name">@${disc.author}</span>
+        <span class="author-name">@${escapeHtml(disc.author)}</span>
       </div>
-      <span class="comment-date">${disc.created_at ? disc.created_at.replace("T", " ").replace("Z", "") : ""}</span>
+      <span class="comment-date">${escapeHtml(disc.created_at ? disc.created_at.replace("T", " ").replace("Z", "") : "")}</span>
     </div>
     <div class="comment-body">${escapeHtml(disc.description)}</div>
   `;
@@ -1752,10 +1752,10 @@ function displayDiscussion(disc) {
     card.innerHTML = `
       <div class="comment-header">
         <div class="author-wrap">
-          <span class="author-name">@${c.author}</span>
-          <span class="badge badge-neutral">${c.id}</span>
+          <span class="author-name">@${escapeHtml(c.author)}</span>
+          <span class="badge badge-neutral">${escapeHtml(c.id)}</span>
         </div>
-        <span class="comment-date">${c.created_at ? c.created_at.replace("T", " ").replace("Z", "") : ""}</span>
+        <span class="comment-date">${escapeHtml(c.created_at ? c.created_at.replace("T", " ").replace("Z", "") : "")}</span>
       </div>
       <div class="comment-body">${escapeHtml(c.body)}</div>
     `;
@@ -1868,10 +1868,10 @@ function renderIntelligenceView(pipelineResult) {
     item.innerHTML = `
       <div class="prop-title-row">
         <span class="prop-title">${escapeHtml(p.name)}</span>
-        <span class="badge ${isAccepted ? "badge-accepted" : "badge-danger"}">${p.status}</span>
+        <span class="badge ${isAccepted ? "badge-accepted" : "badge-danger"}">${escapeHtml(p.status)}</span>
       </div>
       <p class="prop-desc">${escapeHtml(p.description)}</p>
-      <span class="stream-hint">Proposed by @${p.proposer}</span>
+      <span class="stream-hint">Proposed by @${escapeHtml(p.proposer)}</span>
     `;
     propList.appendChild(item);
   });
@@ -1892,12 +1892,13 @@ function renderIntelligenceView(pipelineResult) {
       const reasonsHtml = (ra.rejection_reasons || [])
         .map((r) => `<li><span>❌</span> <span>${escapeHtml(r)}</span></li>`)
         .join("");
+      const sourceHref = safeExternalUrl(ra.comment_url);
 
       card.innerHTML = `
         <div class="rejected-header">
           <div>
             <h4 class="rejected-name">${escapeHtml(ra.name)}</h4>
-            <span class="rejected-proposer">Proposed by @${ra.proposer}</span>
+            <span class="rejected-proposer">Proposed by @${escapeHtml(ra.proposer)}</span>
           </div>
           <span class="badge badge-danger">Rejected Option</span>
         </div>
@@ -1912,9 +1913,9 @@ function renderIntelligenceView(pipelineResult) {
             ? `
           <div class="objection-quote-box">
             "${escapeHtml(ra.key_objection_quote)}"
-            <span class="objection-by">— @${ra.objection_author || "maintainer"} ${
-                ra.comment_url
-                  ? `(<a href="${ra.comment_url}" target="_blank" class="external-link">View in Source</a>)`
+            <span class="objection-by">— @${escapeHtml(ra.objection_author || "maintainer")} ${
+                sourceHref
+                  ? `(<a href="${sourceHref}" target="_blank" rel="noopener noreferrer" class="external-link">View in Source</a>)`
                   : ""
               }</span>
           </div>
@@ -2021,15 +2022,15 @@ function renderDecisionsGrid(decisions) {
     card.innerHTML = `
       <div>
         <div class="dec-header">
-          <span class="badge badge-accepted">${dec.status}</span>
-          <span class="stream-hint">${dec.id}</span>
+          <span class="badge badge-accepted">${escapeHtml(dec.status)}</span>
+          <span class="stream-hint">${escapeHtml(dec.id)}</span>
         </div>
         <h4 class="dec-title">${escapeHtml(dec.title)}</h4>
         <p class="dec-outcome">${escapeHtml(dec.decision_outcome ? dec.decision_outcome.slice(0, 160) + "..." : "")}</p>
         <div class="dec-rejected-pills">${rejectedPills}</div>
       </div>
       <div class="dec-footer">
-        <span>📅 ${dec.date || "Recent"}</span>
+        <span>📅 ${escapeHtml(dec.date || "Recent")}</span>
         <span class="external-link">View Full ADR →</span>
       </div>
     `;
@@ -2083,8 +2084,9 @@ function openDecisionModal(dec) {
   // Evidence Quotes View
   const evidenceWrap = document.getElementById("modal-evidence-table");
   evidenceWrap.innerHTML = (dec.evidence_quotes || [])
-    .map(
-      (eq) => `
+    .map((eq) => {
+      const sourceHref = safeExternalUrl(eq.comment_url);
+      return `
     <div class="evidence-quote-item">
       <div class="evidence-top">
         <span class="badge ${eq.verified ? "badge-accepted" : "badge-neutral"}">
@@ -2094,12 +2096,12 @@ function openDecisionModal(dec) {
       </div>
       <div class="evidence-quote-text">"${escapeHtml(eq.quote)}"</div>
       <div class="evidence-bottom">
-        <span>By @${eq.author} (${eq.comment_id})</span>
-        ${eq.comment_url ? `<a href="${eq.comment_url}" target="_blank" class="external-link">Inspect Source ↗</a>` : ""}
+        <span>By @${escapeHtml(eq.author)} (${escapeHtml(eq.comment_id)})</span>
+        ${sourceHref ? `<a href="${sourceHref}" target="_blank" rel="noopener noreferrer" class="external-link">Inspect Source ↗</a>` : ""}
       </div>
     </div>
-  `
-    )
+    `;
+    })
     .join("");
 
   // JSON View
@@ -2294,7 +2296,7 @@ function renderRadarAlerts(result) {
           <span class="alert-icon">${isHigh ? "🚨" : "ℹ️"}</span>
           <span class="alert-headline">${isHigh ? "CRITICAL: Resurrected Rejected Alternative" : "Architectural Notice"}</span>
         </div>
-        <span class="badge ${isHigh ? "badge-danger" : "badge-neutral"}">${alert.matched_decision_id}</span>
+        <span class="badge ${isHigh ? "badge-danger" : "badge-neutral"}">${escapeHtml(alert.matched_decision_id)}</span>
       </div>
 
       <div class="alert-message">${escapeHtml(alert.message)}</div>
@@ -2725,13 +2727,29 @@ async function runEvaluationBenchmark(animate = true) {
 
 // Helpers
 function escapeHtml(str) {
-  if (!str) return "";
-  return str
+  if (str === null || str === undefined) return "";
+  return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function safeExternalUrl(value) {
+  const parsed = parseExternalUrl(value);
+  return parsed ? escapeHtml(parsed) : "";
+}
+
+function parseExternalUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || !url.hostname || url.username || url.password) return "";
+    return url.href;
+  } catch {
+    return "";
+  }
 }
 
 function jsonBody(obj) {

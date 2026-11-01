@@ -14,7 +14,7 @@ class DummyAPIHandler(PrimordialAPIHandler):
         self.command = method
         self.path = path
         self.request_version = "HTTP/1.1"
-        self.headers = {}
+        self.headers = {"Host": "localhost:8080"}
         if body is not None:
             raw_body = json.dumps(body).encode("utf-8")
             self.rfile = io.BytesIO(raw_body)
