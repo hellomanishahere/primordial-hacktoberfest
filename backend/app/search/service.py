@@ -59,7 +59,8 @@ class SearchService:
         filter_clause, filter_params = build_filter_clauses(filters)
 
         # Sanitize query for FTS5 (escape quotes)
-        safe_query = f'"{query.replace('"', '""')}"'
+        escaped_query = query.replace('"', '""')
+        safe_query = f'"{escaped_query}"'
 
         sql = f"""
             SELECT d.decision_id, d.decision_summary, d.status, d.confidence,
