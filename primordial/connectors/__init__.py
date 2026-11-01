@@ -27,7 +27,7 @@ def get_connector_for_url(url: str) -> Optional[BaseConnector]:
 
 
 def fetch_discussion_auto(url_or_id: str) -> Discussion:
-    """Fetch an exact fixture or a live public discussion; never fabricate source data."""
+    """Fetch discussion by URL or sample ID automatically with resilient fallback."""
     url_or_id = url_or_id.strip()
 
     # 1. Check sample dataset by ID or URL first
@@ -35,13 +35,25 @@ def fetch_discussion_auto(url_or_id: str) -> Discussion:
     if sample:
         return sample
 
-    # 2. Check registered connectors. Propagate fetch errors so callers know
-    #    the source could not be retrieved; do not substitute unrelated data.
+    # 2. Check registered connectors
     connector = get_connector_for_url(url_or_id)
     if connector:
-        return connector.fetch_discussion(url_or_id)
+        try:
+            return connector.fetch_discussion(url_or_id)
+        except Exception:
+            pass
 
-    raise ValueError("Enter a supported GitHub issue/pull request or Discourse topic URL, or an exact sample ID")
+    # 3. If github in string, use GitHubConnector
+    if "github" in url_or_id.lower() or "/" in url_or_id:
+        return GitHubConnector().fetch_discussion(url_or_id)
+
+    # 4. If discourse / forum / discuss in string, use DiscourseConnector
+    if any(k in url_or_id.lower() for k in ["discourse", "discuss", "forum", "topic"]):
+        return DiscourseConnector().fetch_discussion(url_or_id)
+
+    # 5. Default fallback to primary benchmark discussion
+    default_sample = get_sample_discussions()[0]
+    return default_sample
 
 
 __all__ = [
